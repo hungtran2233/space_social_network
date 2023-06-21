@@ -5,8 +5,9 @@ const successCode = (statusCode: number, message: string, data: any) => {
     return { statusCode: statusCode, message: message, content: data };
 };
 
-const failCode = (statusCode: number, message: string) => {
-    return { statusCode: statusCode, message: message };
+// 400: Bad Request
+const badRequest = (mes: string) => {
+    throw new HttpException(mes, HttpStatus.BAD_REQUEST);
 };
 
 // 401:  Unauthorized
@@ -24,4 +25,4 @@ const conflict = (mes: string) => {
     throw new HttpException(mes, HttpStatus.CONFLICT);
 };
 
-export { successCode, unauthorized, conflict, notFound };
+export { successCode, unauthorized, conflict, notFound, badRequest };

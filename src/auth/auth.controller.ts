@@ -11,6 +11,8 @@ import {
     Req,
     UseGuards,
     Put,
+    UseInterceptors,
+    UploadedFile,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { user } from '@prisma/client';
@@ -21,6 +23,11 @@ import {
     UserSignUpType,
 } from './entities/auth.entities';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { RoleDecorator } from './guard/role.decorator';
+import { RolesGuard } from './guard/role.guard';
+import { Role } from './guard/role';
 
 @Controller('auth')
 export class AuthController {
@@ -55,7 +62,8 @@ export class AuthController {
     }
 
     // Lấy thông tin user từ token
-    @UseGuards(AuthGuard('jwt'))
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Get('/get-user-info')
     getUserInfo(@Req() req) {
         try {
@@ -69,7 +77,8 @@ export class AuthController {
     }
 
     // Cập nhật user info
-    @UseGuards(AuthGuard('jwt'))
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Put('/update-user-info')
     updateUserInfo(@Body() updateUserInfo: UpdateUserInfoType, @Req() req) {
         try {
@@ -82,8 +91,36 @@ export class AuthController {
         }
     }
 
+    // Cập nhật avatar
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @UseInterceptors(
+        FileInterceptor('file', {
+            storage: diskStorage({
+                destination: process.cwd() + '/public/img',
+                filename: (req, file, callback) =>
+                    callback(
+                        null,
+                        new Date().getTime() + '_' + file.originalname,
+                    ),
+            }),
+        }),
+    )
+    @Post('/upload-user-avatar')
+    uploadAvatar(@Req() req, @UploadedFile() fileUpload: Express.Multer.File) {
+        try {
+            return this.authService.uploadUserAvatar(req, fileUpload);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
     // Đổi mật khẩu user
-    @UseGuards(AuthGuard('jwt'))
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Put('/change-password')
     changePassword(@Body() changePass: ChangePasswordType, @Req() req) {
         try {
@@ -97,7 +134,8 @@ export class AuthController {
     }
 
     // Đăng xuất
-
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Post('/logout')
     logout(@Req() req) {
         try {

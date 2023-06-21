@@ -32,11 +32,11 @@ const getTimeExpiresByToken = (): any => {
     return datetime;
 };
 
-const getTimeLogout = (): any => {
+const getTimeNowVN = (): any => {
     let timestamp = Math.floor(Date.now() / 1000);
     // Chuyển qua múi giờ việt nam là +7, cộng với thời gian tồn tại của token
     let date = new Date((timestamp + 7 * 60 * 60) * 1000);
     return date.toISOString();
 };
 
-export { getTimeExpiresByToken, getTimeLogout };
+export { getTimeExpiresByToken, getTimeNowVN };

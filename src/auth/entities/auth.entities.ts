@@ -1,28 +1,57 @@
-import { type } from 'os';
+import {
+    validate,
+    validateOrReject,
+    Contains,
+    IsInt,
+    IsString,
+    Length,
+    IsEmail,
+    IsFQDN,
+    IsDate,
+    Min,
+    Max,
+} from 'class-validator';
 
-type UserLoginType = {
+class UserLoginType {
+    @IsEmail()
     email: string;
-    pass_word: string;
-};
 
-type UserSignUpType = {
+    @IsString()
+    pass_word: string;
+}
+
+class UserSignUpType {
+    @IsEmail()
     email: string;
-    pass_word: string;
-    full_name: string;
-};
 
-type UpdateUserInfoType = {
+    @IsString()
+    pass_word: string;
+
+    @IsString()
     full_name: string;
+}
+
+class UpdateUserInfoType {
+    @IsString()
+    full_name: string;
+
+    @IsInt()
     age: number;
-    avatar: string;
-    gender: string;
-    country: string;
-};
 
-type ChangePasswordType = {
+    @IsString()
+    avatar: string;
+    @IsString()
+    gender: string;
+    @IsString()
+    country: string;
+}
+
+class ChangePasswordType {
+    @IsString()
     old_pass_word: string;
+    @IsString()
     new_pass_word: string;
-};
+}
 
 export {
     UserLoginType,

@@ -170,10 +170,15 @@ model ro_permission {
 
 model ro_role {
   role_id            Int                  @id @default(autoincrement())
-  role_name          String?              @db.VarChar(100)
+  user_id            Int?
+  role_name          ro_role_role_name?
   role_desc          String?              @db.VarChar(255)
+  created_at         DateTime?            @default(now()) @db.Timestamp(0)
+  updated_at         DateTime?            @default(now()) @db.Timestamp(0)
+  user               user?                @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "ro_role_ibfk_1")
   ro_role_permission ro_role_permission[]
-  ro_user_role       ro_user_role[]
+
+  @@index([user_id], map: "user_id")
 }
 
 model ro_role_permission {
@@ -185,19 +190,6 @@ model ro_role_permission {
 
   @@index([permission_id], map: "permission_id")
   @@index([role_id], map: "role_id")
-}
-
-model ro_user_role {
-  user_role_id Int       @id @default(autoincrement())
-  user_id      Int?
-  role_id      Int?
-  created_at   DateTime? @default(now()) @db.Timestamp(0)
-  updated_at   DateTime? @default(now()) @db.Timestamp(0)
-  ro_role      ro_role?  @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "ro_user_role_ibfk_1")
-  user         user?     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "ro_user_role_ibfk_2")
-
-  @@index([role_id], map: "role_id")
-  @@index([user_id], map: "user_id")
 }
 
 model save_image {
@@ -218,7 +210,7 @@ model session {
   token      String?   @db.VarChar(2000)
   is_online  Boolean?
   login_at   DateTime? @default(now()) @db.Timestamp(0)
-  logout_at  DateTime? @db.DateTime(0)
+  logout_at  DateTime? @default(now()) @db.Timestamp(0)
   user       user?     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "session_ibfk_1")
 
   @@index([user_id], map: "user_id")
@@ -246,7 +238,7 @@ model user {
   msg_participant                         msg_participant[]
   notification                            notification[]
   post                                    post[]
-  ro_user_role                            ro_user_role[]
+  ro_role                                 ro_role[]
   save_image                              save_image[]
   session                                 session[]
 }
@@ -266,4 +258,10 @@ enum post_privacy {
   public
   private
   friends
+}
+
+enum ro_role_role_name {
+  admin
+  user
+  guests
 }
