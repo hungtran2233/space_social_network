@@ -5,6 +5,7 @@ import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { ImageListModule } from './image-list/image-list.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
     imports: [
@@ -12,6 +13,7 @@ import { ImageListModule } from './image-list/image-list.module';
         ConfigModule.forRoot({ isGlobal: true }),
         AuthModule,
         ImageListModule,
+        MessagesModule,
     ],
     controllers: [AppController],
     providers: [AppService],

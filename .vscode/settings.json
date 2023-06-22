@@ -1,13 +1,13 @@
 {
-  "cSpell.words": ["nestjs"],
+    "cSpell.words": ["nestjs", "websockets"],
 
-  "editor.tabSize": 4,
+    "editor.tabSize": 4,
 
-  "[javascript]": {
-    "editor.tabSize": 4
-  },
+    "[javascript]": {
+        "editor.tabSize": 4
+    },
 
-  "[typescript]": {
-    "editor.tabSize": 4
-  }
+    "[typescript]": {
+        "editor.tabSize": 4
+    }
 }
