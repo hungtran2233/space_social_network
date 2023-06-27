@@ -14,7 +14,12 @@ import {
     UserSignUpType,
 } from './entities/auth.entities';
 import * as bcrypt from 'bcrypt';
-import { conflict, successCode, unauthorized } from 'config/Response';
+import {
+    badRequest,
+    conflict,
+    successCode,
+    unauthorized,
+} from 'config/Response';
 import { getTimeExpiresByToken, getTimeNowVN } from 'config/FormatDateTime';
 
 @Injectable()
@@ -131,7 +136,7 @@ export class AuthService {
     }
 
     // Đăng ký
-    async signUp(userSignUp: UserSignUpType) {
+    async signUp(userSignUp: UserSignUpType, headers: any) {
         const existingUser = await this.prisma.user.findFirst({
             where: {
                 email: userSignUp.email,
@@ -140,31 +145,58 @@ export class AuthService {
         if (!existingUser) {
             // mã hóa pass_word
             let hashedPassword = await bcrypt.hash(userSignUp.pass_word, 10);
+            let newUser;
 
-            // 1/ Tạo user trong table user
-            let newUser = await this.prisma.user.create({
-                data: {
-                    ...userSignUp,
-                    pass_word: hashedPassword,
-                },
-            });
+            // Check admin_private_key
+            const adminPK = headers.admin_private_key;
+            if (!adminPK) {
+                // 1/ Tạo user trong table user
+                newUser = await this.prisma.user.create({
+                    data: {
+                        ...userSignUp,
+                        pass_word: hashedPassword,
+                    },
+                });
+                // 2/ Tạo Role cho user
+                await this.prisma.ro_role.create({
+                    data: {
+                        user_id: newUser.user_id,
+                        role_name: 'user',
+                        role_desc: 'Người dùng được thao tác giới hạn',
+                    },
+                });
+            } else if (
+                adminPK &&
+                adminPK === this.config.get('ADMIN_PRIVATE_KEY')
+            ) {
+                newUser = await this.prisma.user.create({
+                    data: {
+                        ...userSignUp,
+                        pass_word: hashedPassword,
+                    },
+                });
 
-            // 2/ Tạo Role cho user
-            await this.prisma.ro_role.create({
-                data: {
-                    user_id: newUser.user_id,
-                    role_name: 'user',
-                    role_desc: 'Người dùng được thao tác giới hạn',
-                },
-            });
+                await this.prisma.ro_role.create({
+                    data: {
+                        user_id: newUser.user_id,
+                        role_name: 'admin',
+                        role_desc:
+                            'Quyền quản trị cao nhất, được thao tác toàn bộ',
+                    },
+                });
+            } else {
+                badRequest('Admin private key không chính xác');
+            }
 
             // 3/ Tạo image_list mới với tên là avatar
-            await this.prisma.image_list.create({
-                data: {
-                    user_id: newUser.user_id,
-                    list_name: 'avatar',
-                },
+            const imageListData = [
+                { user_id: newUser.user_id, list_name: 'uploaded-images' },
+                { user_id: newUser.user_id, list_name: 'saved-images' },
+            ];
+            await this.prisma.image_list.createMany({
+                data: imageListData,
             });
+
             return successCode(201, 'Đăng ký thành công', newUser);
         } else {
             conflict('Email đã tồn tại');
@@ -232,12 +264,8 @@ export class AuthService {
         }
     }
 
-    // Cập nhật avatar user
-    async uploadUserAvatar(
-        // uploadUserAvatar: UploadUserAvatarType,
-        req: any,
-        fileUpload: Express.Multer.File,
-    ) {
+    // Upload avatar
+    async uploadUserAvatar(req: any, fileUpload: Express.Multer.File) {
         // 1/ Thực hiện lưu file vào table user - cột avatar
 
         await this.prisma.user.update({
@@ -253,7 +281,7 @@ export class AuthService {
         let findImageList = await this.prisma.image_list.findFirst({
             where: {
                 user_id: req.user.user_id,
-                list_name: 'avatar',
+                list_name: 'uploaded-images',
             },
         });
 
@@ -343,4 +371,6 @@ export class AuthService {
             return successCode(200, 'Đăng xuất thành công', 'Logout');
         }
     }
+
+    //////////
 }

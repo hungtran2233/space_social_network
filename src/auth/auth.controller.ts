@@ -1,5 +1,6 @@
 import {
     Body,
+    Headers,
     ConflictException,
     Controller,
     HttpCode,
@@ -50,9 +51,9 @@ export class AuthController {
     // Đăng ký
     @Post('signup')
     @HttpCode(201)
-    signUp(@Body() userSignUp: UserSignUpType) {
+    signUp(@Body() userSignUp: UserSignUpType, @Headers() headers: any) {
         try {
-            return this.authService.signUp(userSignUp);
+            return this.authService.signUp(userSignUp, headers);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
@@ -91,7 +92,7 @@ export class AuthController {
         }
     }
 
-    // Cập nhật avatar
+    // Upload avatar
     @RoleDecorator(Role.ADMIN, Role.USER)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @UseInterceptors(

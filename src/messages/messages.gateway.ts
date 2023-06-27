@@ -21,14 +21,22 @@ export class MessagesGateway {
 
     constructor(private readonly messagesService: MessagesService) {}
 
+    // Tạo tin nhắn
     @SubscribeMessage('createMessage')
-    async create(@MessageBody() createMessageDto: CreateMessageDto) {
-        const message = await this.messagesService.create(createMessageDto);
+    async create(
+        @MessageBody() createMessageDto: CreateMessageDto,
+        @ConnectedSocket() client: Socket,
+    ) {
+        const message = await this.messagesService.create(
+            createMessageDto,
+            client.id,
+        );
         this.server.emit('message', message);
 
         return message;
     }
 
+    // Tìm tất cả tin nhắn cũ
     @SubscribeMessage('findAllMessages')
     findAll() {
         return this.messagesService.findAll();

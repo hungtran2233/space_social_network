@@ -15,7 +15,7 @@ model comment {
   content            String?   @db.VarChar(500)
   like_count_comment Int?
   created_at         DateTime? @default(now()) @db.Timestamp(0)
-  updated_at         DateTime? @default(now()) @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
   user               user?     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_1")
   image              image?    @relation(fields: [image_id], references: [image_id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_2")
   post               post?     @relation(fields: [post_id], references: [post_id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_3")
@@ -32,6 +32,7 @@ model friend_ship {
   user_id_2                        Int?
   status                           friend_ship_status?
   created_at                       DateTime?           @default(now()) @db.Timestamp(0)
+  updated_at                       DateTime?           @db.Timestamp(0)
   user_friend_ship_user_id_1Touser user?               @relation("friend_ship_user_id_1Touser", fields: [user_id_1], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "friend_ship_ibfk_1")
   user_friend_ship_user_id_2Touser user?               @relation("friend_ship_user_id_2Touser", fields: [user_id_2], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "friend_ship_ibfk_2")
 
@@ -47,7 +48,7 @@ model image {
   like_count_image Int?
   image_list_id    Int?
   created_at       DateTime?    @default(now()) @db.Timestamp(0)
-  updated_at       DateTime?    @default(now()) @db.Timestamp(0)
+  updated_at       DateTime?    @db.Timestamp(0)
   comment          comment[]
   image_list       image_list?  @relation(fields: [image_list_id], references: [image_list_id], onDelete: NoAction, onUpdate: NoAction, map: "image_ibfk_1")
   likes            likes[]
@@ -61,7 +62,7 @@ model image_list {
   user_id       Int?
   list_name     String?   @db.VarChar(255)
   created_at    DateTime? @default(now()) @db.Timestamp(0)
-  updated_at    DateTime? @default(now()) @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
   image         image[]
   user          user?     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "image_list_ibfk_1")
 
@@ -75,7 +76,7 @@ model likes {
   post_id    Int?
   comment_id Int?
   created_at DateTime? @default(now()) @db.Timestamp(0)
-  updated_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
   user       user?     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "likes_ibfk_1")
   image      image?    @relation(fields: [image_id], references: [image_id], onDelete: NoAction, onUpdate: NoAction, map: "likes_ibfk_2")
   post       post?     @relation(fields: [post_id], references: [post_id], onDelete: NoAction, onUpdate: NoAction, map: "likes_ibfk_3")
@@ -151,7 +152,7 @@ model post {
   video_url    String?        @db.VarChar(1000)
   privacy      post_privacy?
   created_at   DateTime?      @default(now()) @db.Timestamp(0)
-  updated_at   DateTime?      @default(now()) @db.Timestamp(0)
+  updated_at   DateTime?      @db.Timestamp(0)
   is_deleted   Boolean?       @default(false)
   comment      comment[]
   likes        likes[]
@@ -174,7 +175,7 @@ model ro_role {
   role_name          ro_role_role_name?
   role_desc          String?              @db.VarChar(255)
   created_at         DateTime?            @default(now()) @db.Timestamp(0)
-  updated_at         DateTime?            @default(now()) @db.Timestamp(0)
+  updated_at         DateTime?            @db.Timestamp(0)
   user               user?                @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "ro_role_ibfk_1")
   ro_role_permission ro_role_permission[]
 
@@ -196,7 +197,7 @@ model save_image {
   user_id    Int
   image_id   Int
   created_at DateTime? @default(now()) @db.Timestamp(0)
-  updated_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
   user       user      @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "save_image_ibfk_1")
   image      image     @relation(fields: [image_id], references: [image_id], onDelete: NoAction, onUpdate: NoAction, map: "save_image_ibfk_2")
 
@@ -210,7 +211,7 @@ model session {
   token      String?   @db.VarChar(2000)
   is_online  Boolean?
   login_at   DateTime? @default(now()) @db.Timestamp(0)
-  logout_at  DateTime? @default(now()) @db.Timestamp(0)
+  logout_at  DateTime? @db.Timestamp(0)
   user       user?     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "session_ibfk_1")
 
   @@index([user_id], map: "user_id")
@@ -226,7 +227,7 @@ model user {
   gender                                  String?            @db.VarChar(100)
   country                                 String?            @db.VarChar(100)
   created_at                              DateTime?          @default(now()) @db.Timestamp(0)
-  updated_at                              DateTime?          @default(now()) @db.Timestamp(0)
+  updated_at                              DateTime?          @db.Timestamp(0)
   is_deleted                              Boolean?           @default(false)
   comment                                 comment[]
   friend_ship_friend_ship_user_id_1Touser friend_ship[]      @relation("friend_ship_user_id_1Touser")

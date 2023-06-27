@@ -53,6 +53,8 @@ class ChangePasswordType {
     new_pass_word: string;
 }
 
+//// ADMIN
+
 export {
     UserLoginType,
     UserSignUpType,
