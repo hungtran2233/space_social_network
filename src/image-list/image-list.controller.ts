@@ -16,13 +16,17 @@ import { ImageListService } from './image-list.service';
 import { CreateImageListDto } from './dto/create-image-list.dto';
 import { UpdateImageListDto } from './dto/update-image-list.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RoleDecorator } from 'src/auth/guard/role.decorator';
+import { Role } from 'src/auth/guard/role';
+import { RolesGuard } from 'src/auth/guard/role.guard';
 
 @Controller('image-list')
 export class ImageListController {
     constructor(private readonly imageListService: ImageListService) {}
 
     // Thêm
-    @UseGuards(AuthGuard('jwt'))
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Post('/create')
     create(@Body() createImageListDto: CreateImageListDto, @Req() req) {
         return this.imageListService.create(createImageListDto, req);

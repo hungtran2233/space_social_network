@@ -88,6 +88,8 @@ export class ImageController {
     }
 
     // Cập nhật lại image
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Put('/update-image/:id')
     update(@Param('id') id: string, @Body() updateImageDto: UpdateImageDto) {
         try {
@@ -100,8 +102,65 @@ export class ImageController {
         }
     }
 
-    @Delete('/delete/:id')
+    // Xóa mềm image
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Put('/delete/:id')
     remove(@Param('id') id: string) {
-        return this.imageService.remove(+id);
+        try {
+            return this.imageService.remove(+id);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    /////////////////////////////
+
+    // Lưu ảnh
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Post('/save-image/:id')
+    saveImage(@Param('id') id: string, @Req() req: any) {
+        try {
+            return this.imageService.saveImage(+id, req);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    // Bỏ lưu ảnh
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Delete('/unsave-image/:id')
+    unSaveImage(@Param('id') id: string, @Req() req: any) {
+        try {
+            return this.imageService.unSaveImage(+id, req);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    // Hiển thị tất cả ảnh đã lưu trên trang cá nhân
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/show-saved-image')
+    showSavedImage(@Req() req: any) {
+        try {
+            return this.imageService.showSavedImage(req);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
     }
 }

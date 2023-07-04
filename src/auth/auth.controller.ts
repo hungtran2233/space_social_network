@@ -108,7 +108,10 @@ export class AuthController {
         }),
     )
     @Post('/upload-user-avatar')
-    uploadAvatar(@Req() req, @UploadedFile() fileUpload: Express.Multer.File) {
+    uploadUserAvatar(
+        @Req() req,
+        @UploadedFile() fileUpload: Express.Multer.File,
+    ) {
         try {
             return this.authService.uploadUserAvatar(req, fileUpload);
         } catch (error) {

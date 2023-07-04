@@ -16,7 +16,7 @@ export class RolesGuard implements CanActivate {
         );
 
         if (!requiredRoles) {
-            return true; // Nếu API không được đánh dấu với @RoleDecorator, cho phép truy cập (trường hợp này có đánh dấu Role.ADMIN)
+            return true; // Nếu API không được đánh dấu với @RoleDecorator => cho phép truy cập
         }
 
         // Lấy thông tin từ request

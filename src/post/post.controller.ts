@@ -1,34 +1,131 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Put,
+    Body,
+    Patch,
+    Param,
+    Delete,
+    HttpException,
+    HttpStatus,
+    Req,
+    UseGuards,
+    UseInterceptors,
+    UploadedFile,
+    UploadedFiles,
+} from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { RoleDecorator } from 'src/auth/guard/role.decorator';
+import { Role } from 'src/auth/guard/role';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/guard/role.guard';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 @Controller('post')
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+    constructor(private readonly postService: PostService) {}
 
-  @Post()
-  create(@Body() createPostDto: CreatePostDto) {
-    return this.postService.create(createPostDto);
-  }
+    // Tạo bài post
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @UseInterceptors(
+        FilesInterceptor('files', 20, {
+            storage: diskStorage({
+                destination: process.cwd() + '/public/img',
+                filename: (req, file, callback) => {
+                    callback(
+                        null,
+                        new Date().getTime() + '_' + file.originalname,
+                    );
+                },
+            }),
+        }),
+    )
+    @Post('/create-post')
+    create(
+        @Req() req: any,
+        @Body('content') postContent: string,
+        @Body('video_url') videoUrl: string,
+        @Body('privacy') postPrivacy: number,
+        @UploadedFiles() files: Express.Multer.File,
+    ) {
+        try {
+            return this.postService.create(
+                req,
+                postContent,
+                videoUrl,
+                postPrivacy,
+                files,
+            );
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
 
-  @Get()
-  findAll() {
-    return this.postService.findAll();
-  }
+    // Hiển thị tất cả bài post của tất cả user theo privacy
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/get-all-post')
+    findAll() {
+        try {
+            return this.postService.findAll();
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.postService.findOne(+id);
-  }
+    // Trang cá nhân, hiển thị tất cả bài post của cá nhân
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/get-all-post-personal')
+    findPostPersonal(@Req() req: any) {
+        try {
+            return this.postService.findPostPersonal(req);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postService.update(+id, updatePostDto);
-  }
+    // Cập nhật bài viết
+    // @RoleDecorator(Role.ADMIN, Role.USER)
+    // @UseGuards(AuthGuard('jwt'), RolesGuard)
+    // @Put('/update-post/:id')
+    // update(@Param('id') id: string, @Body() postCon: any) {
+    //     try {
+    //         return this.postService.update(+id, postCon);
+    //     } catch (error) {
+    //         throw new HttpException(
+    //             'Lỗi server',
+    //             HttpStatus.INTERNAL_SERVER_ERROR,
+    //         );
+    //     }
+    // }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.postService.remove(+id);
-  }
+    // Xóa bài viết
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Delete('/remove-post/:id')
+    remove(@Param('id') id: string, @Req() req: any) {
+        try {
+            return this.postService.remove(+id, req);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
 }

@@ -8,6 +8,8 @@ import { ImageListModule } from './image-list/image-list.module';
 import { MessagesModule } from './messages/messages.module';
 import { ImageModule } from './image/image.module';
 import { PostModule } from './post/post.module';
+import { FriendShipModule } from './friend_ship/friend_ship.module';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
     imports: [
@@ -18,6 +20,8 @@ import { PostModule } from './post/post.module';
         MessagesModule,
         ImageModule,
         PostModule,
+        FriendShipModule,
+        CommentModule,
     ],
     controllers: [AppController],
     providers: [AppService],

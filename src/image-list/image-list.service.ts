@@ -12,13 +12,13 @@ export class ImageListService {
 
     // Tạo image-list
     async create(createImageListDto: CreateImageListDto, req: any) {
+        const id = req.user.data.user_id;
         const existingImageList = await this.prisma.image_list.findFirst({
             where: {
+                user_id: id,
                 list_name: createImageListDto.list_name,
             },
         });
-
-        const id = req.user.data.user_id;
 
         if (existingImageList) {
             conflict('Tên image list đã tồn tại');

@@ -190,8 +190,16 @@ export class AuthService {
 
             // 3/ Tạo image_list mới với tên là avatar
             const imageListData = [
-                { user_id: newUser.user_id, list_name: 'uploaded-images' },
-                { user_id: newUser.user_id, list_name: 'saved-images' },
+                {
+                    user_id: newUser.user_id,
+                    list_name: 'uploaded-images',
+                    privacy_id: 1,
+                },
+                {
+                    user_id: newUser.user_id,
+                    list_name: 'saved-images',
+                    privacy_id: 1,
+                },
             ];
             await this.prisma.image_list.createMany({
                 data: imageListData,
