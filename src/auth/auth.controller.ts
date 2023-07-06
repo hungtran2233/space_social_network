@@ -34,20 +34,6 @@ import { Role } from './guard/role';
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
-    // Đăng nhập
-    @Post('login')
-    @HttpCode(200)
-    login(@Body() userLogin: UserLoginType) {
-        try {
-            return this.authService.login(userLogin);
-        } catch (error) {
-            throw new HttpException(
-                'Lỗi server',
-                HttpStatus.INTERNAL_SERVER_ERROR,
-            );
-        }
-    }
-
     // Đăng ký
     @Post('signup')
     @HttpCode(201)
@@ -62,11 +48,25 @@ export class AuthController {
         }
     }
 
+    // Đăng nhập
+    @Post('login')
+    @HttpCode(200)
+    login(@Body() userLogin: UserLoginType) {
+        try {
+            return this.authService.login(userLogin);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
     // Lấy thông tin user từ token
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Get('/get-user-info')
-    getUserInfo(@Req() req) {
+    getUserInfo(@Req() req: any) {
         try {
             return this.authService.getUserInfo(req);
         } catch (error) {
@@ -78,10 +78,13 @@ export class AuthController {
     }
 
     // Cập nhật user info
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Put('/update-user-info')
-    updateUserInfo(@Body() updateUserInfo: UpdateUserInfoType, @Req() req) {
+    updateUserInfo(
+        @Body() updateUserInfo: UpdateUserInfoType,
+        @Req() req: any,
+    ) {
         try {
             return this.authService.updateUserInfo(updateUserInfo, req);
         } catch (error) {
@@ -93,7 +96,7 @@ export class AuthController {
     }
 
     // Upload avatar
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @UseInterceptors(
         FileInterceptor('file', {
@@ -109,7 +112,7 @@ export class AuthController {
     )
     @Post('/upload-user-avatar')
     uploadUserAvatar(
-        @Req() req,
+        @Req() req: any,
         @UploadedFile() fileUpload: Express.Multer.File,
     ) {
         try {
@@ -122,11 +125,41 @@ export class AuthController {
         }
     }
 
+    // Upload ảnh bìa - cover_image
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @UseInterceptors(
+        FileInterceptor('file', {
+            storage: diskStorage({
+                destination: process.cwd() + '/public/img',
+                filename: (req, file, callback) =>
+                    callback(
+                        null,
+                        new Date().getTime() + '_' + file.originalname,
+                    ),
+            }),
+        }),
+    )
+    @Post('/upload-user-cover-image')
+    uploadUserCoverImage(
+        @Req() req: any,
+        @UploadedFile() fileUpload: Express.Multer.File,
+    ) {
+        try {
+            return this.authService.uploadUserCoverImage(req, fileUpload);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
     // Đổi mật khẩu user
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Put('/change-password')
-    changePassword(@Body() changePass: ChangePasswordType, @Req() req) {
+    changePassword(@Body() changePass: ChangePasswordType, @Req() req: any) {
         try {
             return this.authService.changePassword(changePass, req);
         } catch (error) {

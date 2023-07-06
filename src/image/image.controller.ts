@@ -29,8 +29,8 @@ import { RolesGuard } from 'src/auth/guard/role.guard';
 export class ImageController {
     constructor(private readonly imageService: ImageService) {}
 
-    // Upload ảnh
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    // Upload ảnh -- user upload ảnh lên cho cộng đồng
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @UseInterceptors(
         FileInterceptor('file', {
@@ -61,7 +61,7 @@ export class ImageController {
         }
     }
 
-    // Lấy toàn bộ ảnh
+    // User xem toàn bộ ảnh của tất cả user trong hệ thống
     @Get('/get-all-image')
     findAll() {
         try {
@@ -75,6 +75,7 @@ export class ImageController {
     }
 
     // Lấy chi tiết ảnh
+
     @Get('/image-detail/:id')
     getImageDetail(@Param('id') id: string) {
         try {

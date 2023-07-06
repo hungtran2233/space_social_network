@@ -31,6 +31,93 @@ export class AuthService {
 
     // khai báo prisma
     prisma = new PrismaClient();
+    ////////////////////////
+
+    // Đăng ký
+    async signUp(userSignUp: UserSignUpType, headers: any) {
+        const existingUser = await this.prisma.user.findFirst({
+            where: {
+                email: userSignUp.email,
+            },
+        });
+        if (!existingUser) {
+            // mã hóa pass_word
+            let hashedPassword = await bcrypt.hash(userSignUp.pass_word, 10);
+            let newUser;
+
+            // Check admin_private_key
+            const adminPK = headers.admin_private_key;
+            if (!adminPK) {
+                // 1/ Tạo user trong table user
+                newUser = await this.prisma.user.create({
+                    data: {
+                        ...userSignUp,
+                        pass_word: hashedPassword,
+                        full_name: userSignUp.email,
+                        avatar: '/public/default/default-avatar.png',
+                    },
+                });
+
+                // 2/ Tạo Role cho user
+                await this.prisma.ro_role.create({
+                    data: {
+                        user_id: newUser.user_id,
+                        role_name: 'user',
+                        role_desc: 'Người dùng được thao tác giới hạn',
+                    },
+                });
+            } else if (
+                adminPK &&
+                adminPK === this.config.get('ADMIN_PRIVATE_KEY')
+            ) {
+                newUser = await this.prisma.user.create({
+                    data: {
+                        ...userSignUp,
+                        pass_word: hashedPassword,
+                    },
+                });
+
+                await this.prisma.ro_role.create({
+                    data: {
+                        user_id: newUser.user_id,
+                        role_name: 'admin',
+                        role_desc:
+                            'Quyền quản trị cao nhất, được thao tác toàn bộ',
+                    },
+                });
+            } else {
+                badRequest('Admin private key không chính xác');
+            }
+
+            // 3/ Tạo userInfo trong table user_info
+            await this.prisma.user_info.create({
+                data: {
+                    user_id: newUser.user_id,
+                },
+            });
+
+            // 4/ Tạo image_list mới với tên là avatar
+            const imageListData = [
+                {
+                    user_id: newUser.user_id,
+                    list_name: 'uploaded-images',
+                    privacy_id: 1,
+                },
+                {
+                    user_id: newUser.user_id,
+                    list_name: 'saved-images',
+                    privacy_id: 1,
+                },
+            ];
+            await this.prisma.image_list.createMany({
+                data: imageListData,
+            });
+
+            return successCode(201, 'Đăng ký thành công', newUser);
+        } else {
+            conflict('Email đã tồn tại');
+        }
+    }
 
     // Remove token cũ cùng user_id trong session, chỉ lấy token đăng nhập mới nhất
     async removeOldToken(id: number) {
@@ -135,138 +222,63 @@ export class AuthService {
         // khóa API theo token đó
     }
 
-    // Đăng ký
-    async signUp(userSignUp: UserSignUpType, headers: any) {
-        const existingUser = await this.prisma.user.findFirst({
-            where: {
-                email: userSignUp.email,
-            },
-        });
-        if (!existingUser) {
-            // mã hóa pass_word
-            let hashedPassword = await bcrypt.hash(userSignUp.pass_word, 10);
-            let newUser;
-
-            // Check admin_private_key
-            const adminPK = headers.admin_private_key;
-            if (!adminPK) {
-                // 1/ Tạo user trong table user
-                newUser = await this.prisma.user.create({
-                    data: {
-                        ...userSignUp,
-                        pass_word: hashedPassword,
-                    },
-                });
-                // 2/ Tạo Role cho user
-                await this.prisma.ro_role.create({
-                    data: {
-                        user_id: newUser.user_id,
-                        role_name: 'user',
-                        role_desc: 'Người dùng được thao tác giới hạn',
-                    },
-                });
-            } else if (
-                adminPK &&
-                adminPK === this.config.get('ADMIN_PRIVATE_KEY')
-            ) {
-                newUser = await this.prisma.user.create({
-                    data: {
-                        ...userSignUp,
-                        pass_word: hashedPassword,
-                    },
-                });
-
-                await this.prisma.ro_role.create({
-                    data: {
-                        user_id: newUser.user_id,
-                        role_name: 'admin',
-                        role_desc:
-                            'Quyền quản trị cao nhất, được thao tác toàn bộ',
-                    },
-                });
-            } else {
-                badRequest('Admin private key không chính xác');
-            }
-
-            // 3/ Tạo image_list mới với tên là avatar
-            const imageListData = [
-                {
-                    user_id: newUser.user_id,
-                    list_name: 'uploaded-images',
-                    privacy_id: 1,
-                },
-                {
-                    user_id: newUser.user_id,
-                    list_name: 'saved-images',
-                    privacy_id: 1,
-                },
-            ];
-            await this.prisma.image_list.createMany({
-                data: imageListData,
-            });
-
-            return successCode(201, 'Đăng ký thành công', newUser);
-        } else {
-            conflict('Email đã tồn tại');
-        }
-    }
-
     // Lấy thông tin user từ token
     async getUserInfo(req: any) {
-        let decodeToken = await req.user;
-        let id = decodeToken.data.user_id;
-
-        let role_name = decodeToken.data.role_name;
-
+        let myInfo = req.user.data;
         let allUserInfo = await this.prisma.user.findFirst({
             where: {
-                user_id: id,
+                user_id: myInfo.user_id,
+            },
+            include: {
+                user_info: true,
             },
         });
 
-        let { user_id, email, full_name, age, avatar, gender, country } =
-            allUserInfo;
-        let userInfo = {
-            user_id,
-            email,
-            full_name,
-            age,
-            avatar,
-            gender,
-            country,
-            role_name,
-        };
-
-        return successCode(200, 'Lấy thông tin user thành công ', userInfo);
+        return successCode(200, 'Lấy thông tin user thành công', {
+            ...allUserInfo,
+            role: myInfo.role_name,
+        });
     }
 
     // Cập nhật user info
     async updateUserInfo(updateUserInfo: UpdateUserInfoType, req: any) {
-        let decodeToken = await req.user;
-        if (decodeToken) {
-            let id = decodeToken.data.user_id;
-
-            const { full_name, age, avatar, gender, country } = updateUserInfo;
-            const newUserInfo = await this.prisma.user.update({
+        const myInfo = req.user.data;
+        if (myInfo) {
+            const {
+                full_name,
+                age,
+                gender,
+                country,
+                study_at,
+                working_at,
+                favorites,
+            } = updateUserInfo;
+            const newFullName = await this.prisma.user.update({
+                where: {
+                    user_id: myInfo.user_id,
+                },
                 data: {
                     full_name,
+                },
+            });
+            const newUserInfo = await this.prisma.user_info.update({
+                data: {
                     age,
-                    avatar,
                     gender,
                     country,
+                    study_at,
+                    working_at,
+                    favorites,
                 },
                 where: {
-                    user_id: id,
+                    user_id: myInfo.user_id,
                 },
             });
 
-            let showUserInfo = { full_name, age, avatar, gender, country };
-
-            return successCode(
-                200,
-                'Cập nhật thông tin user thành công',
-                showUserInfo,
-            );
+            return successCode(200, 'Cập nhật thông tin user thành công', {
+                newFullName,
+                newUserInfo,
+            });
         } else {
             unauthorized('Không đủ quyền truy cập hoặc token đã hết hạn');
         }
@@ -274,6 +286,7 @@ export class AuthService {
 
     // Upload avatar
     async uploadUserAvatar(req: any, fileUpload: Express.Multer.File) {
+        const myInfo = req.user.data;
         // 1/ Thực hiện lưu file vào table user - cột avatar
 
         await this.prisma.user.update({
@@ -281,14 +294,14 @@ export class AuthService {
                 avatar: fileUpload.filename,
             },
             where: {
-                user_id: req.user.data.user_id,
+                user_id: myInfo.user_id,
             },
         });
 
         // 2/ Lấy ra được image_list_id thông qua user_id và list_name=avatar
         let findImageList = await this.prisma.image_list.findFirst({
             where: {
-                user_id: req.user.user_id,
+                user_id: myInfo.user_id,
                 list_name: 'uploaded-images',
             },
         });
@@ -309,9 +322,47 @@ export class AuthService {
         );
     }
 
+    // Upload ảnh bìa - cover_image
+    async uploadUserCoverImage(req: any, fileUpload: Express.Multer.File) {
+        const myInfo = req.user.data;
+        // 1/ Thực hiện lưu file vào table user_info  - cột cover_image
+
+        await this.prisma.user_info.update({
+            data: {
+                cover_image: fileUpload.filename,
+            },
+            where: {
+                user_id: myInfo.user_id,
+            },
+        });
+
+        // 2/ Lấy ra được image_list_id thông qua user_id và list_name=avatar
+        let findImageList = await this.prisma.image_list.findFirst({
+            where: {
+                user_id: myInfo.user_id,
+                list_name: 'uploaded-images',
+            },
+        });
+
+        // 3/ Thêm cover_image này vào image
+        await this.prisma.image.create({
+            data: {
+                image_name: fileUpload.originalname,
+                path: fileUpload.filename,
+                image_list_id: findImageList.image_list_id,
+            },
+        });
+
+        return successCode(
+            200,
+            'Cập nhật ảnh bìa thành công',
+            fileUpload.originalname,
+        );
+    }
+
     // Đổi mật khẩu user
     async changePassword(changePass: ChangePasswordType, req: any) {
-        let decodeToken = await req.user;
+        let decodeToken = req.user;
         if (decodeToken) {
             // 1/Tìm thông tin user
             let id = decodeToken.data.user_id;

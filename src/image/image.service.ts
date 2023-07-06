@@ -67,7 +67,6 @@ export class ImageService {
                     },
                 },
 
-                likes: true,
                 comment: true,
                 save_image: {
                     select: {
@@ -215,7 +214,7 @@ export class ImageService {
         const savedImage = await this.prisma.$queryRaw`
             select save_image.user_id,  
             save_image.image_id, image.image_name, image.path, image.description, 
-            image.like_count_image, image.image_list_id
+             image.image_list_id
             from save_image
             join user on save_image.user_id = user.user_id 
             join image on save_image.image_id = image.image_id

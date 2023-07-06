@@ -30,7 +30,7 @@ export class PostController {
     constructor(private readonly postService: PostService) {}
 
     // Tạo bài post
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @UseInterceptors(
         FilesInterceptor('files', 20, {
@@ -70,7 +70,7 @@ export class PostController {
     }
 
     // Hiển thị tất cả bài post của tất cả user theo privacy
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Get('/get-all-post')
     findAll() {
@@ -85,7 +85,7 @@ export class PostController {
     }
 
     // Trang cá nhân, hiển thị tất cả bài post của cá nhân
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Get('/get-all-post-personal')
     findPostPersonal(@Req() req: any) {
@@ -115,12 +115,12 @@ export class PostController {
     // }
 
     // Xóa bài viết
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Delete('/remove-post/:id')
-    remove(@Param('id') id: string, @Req() req: any) {
+    @Put('/remove-post/:id')
+    removePost(@Param('id') id: string, @Req() req: any) {
         try {
-            return this.postService.remove(+id, req);
+            return this.postService.removePost(+id, req);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',

@@ -7,8 +7,8 @@ import { notFound, successCode } from 'config/Response';
 @Injectable()
 export class PostService {
     prisma = new PrismaClient();
-    //
-    // Tạo bài post
+    ///////
+    // User tạo bài post
     async create(
         req: any,
         postContent: string,
@@ -75,7 +75,7 @@ export class PostService {
         return successCode(201, 'Tạo bài post thành công', newPost);
     }
 
-    // Lấy tất cả bài post của tất cả user có privacy_id=1  (public)
+    // Hiển thị tất cả bài post công khai Lấy tất cả bài post của tất cả user có privacy_id=1  (public)
     async findAll() {
         const allPost = await this.prisma.post.findMany({
             where: {
@@ -117,7 +117,8 @@ export class PostService {
         return postCon;
     }
 
-    async remove(id: number, req: any) {
+    // Xóa bài viết
+    async removePost(id: number, req: any) {
         const existingPost = await this.prisma.post.findFirst({
             where: {
                 user_id: req.user.data.user_id,
@@ -135,6 +136,12 @@ export class PostService {
                     is_deleted: true,
                 },
             });
+
+            return successCode(
+                200,
+                'Xóa bài viết thành công',
+                `Deleted postId=${id}`,
+            );
         } else {
             notFound('Bài viết của bạn không tồn tại');
         }

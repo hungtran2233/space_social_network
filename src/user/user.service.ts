@@ -12,7 +12,7 @@ export class UserService {
     prisma = new PrismaClient();
 
     // Create user
-    async create(createUserDto: CreateUserDto) {
+    async create(createUserDto: CreateUserDto, req: any) {
         const existingUser = await this.prisma.user.findFirst({
             where: {
                 email: createUserDto.email,
@@ -39,12 +39,28 @@ export class UserService {
                 },
             });
 
-            // 3/ Tạo image-list có list_name=avatar để lưu avatar cho user mỗi khi up avatar lên
-            await this.prisma.image_list.create({
+            // 3/ Tạo userInfo trong table user_info
+            await this.prisma.user_info.create({
                 data: {
                     user_id: newUser.user_id,
-                    list_name: 'avatar',
                 },
+            });
+
+            // 4/ Tạo image_list mới là: uploaded-images  và saved-images
+            const imageListData = [
+                {
+                    user_id: newUser.user_id,
+                    list_name: 'uploaded-images',
+                    privacy_id: 1,
+                },
+                {
+                    user_id: newUser.user_id,
+                    list_name: 'saved-images',
+                    privacy_id: 1,
+                },
+            ];
+            await this.prisma.image_list.createMany({
+                data: imageListData,
             });
 
             return successCode(201, 'Tạo user mới thành công', newUser);
@@ -55,6 +71,14 @@ export class UserService {
 
     // Admin cấp quyền cho user
     async provideRole(id: number, roleName: any) {
+        const existingUser = await this.prisma.user.findFirst({
+            where: {
+                user_id: id,
+            },
+        });
+
+        if (!existingUser) return notFound('Người dùng không tồn tại');
+
         if (Object.values(Role).includes(roleName.role_name)) {
             const userRoleId = await this.prisma.ro_role.findFirst({
                 where: {
@@ -71,6 +95,8 @@ export class UserService {
                     desc = 'Quyền quản trị cao nhất, được thao tác toàn bộ';
                 } else if (roleName.role_name === 'user') {
                     desc = 'Người dùng được thao tác giới hạn';
+                } else if (roleName.role_name === 'celebrity') {
+                    desc = 'Người nổi tiếng, được user nhấn theo dõi';
                 } else {
                     desc = 'Chỉ được xem, không được thao tác';
                 }
@@ -87,19 +113,17 @@ export class UserService {
                 return successCode(200, 'Cấp quyền thành công', newUserRole);
             }
         } else {
-            badRequest(`Nhập sai tên quyền ! ['admin', 'user', 'guests']`);
+            badRequest(
+                `Nhập sai tên quyền ! ['admin', 'user', 'celebrity', 'guests']`,
+            );
         }
     }
 
     // Lấy tất cả user, bao gồm cả user đã bị xóa
-    async findAll(): Promise<{
-        statusCode: number;
-        message: string;
-        content: user[];
-    }> {
+    async findAll(req: any) {
         let data = await this.prisma.user.findMany({
             where: {
-                is_deleted: false,
+                is_active: true,
             },
             include: {
                 ro_role: true,
@@ -113,7 +137,7 @@ export class UserService {
         let data = await this.prisma.user.findFirst({
             where: {
                 user_id: id,
-                is_deleted: false,
+                is_active: true,
             },
             include: {
                 ro_role: true,
@@ -128,65 +152,48 @@ export class UserService {
 
     // update user
     async update(id: number, updateUserDto: UpdateUserDto) {
-        let checkUser = await this.prisma.user.findFirst({
+        let existingUser = await this.prisma.user.findFirst({
             where: {
                 user_id: id,
-                is_deleted: false,
             },
         });
-        if (checkUser) {
-            const { pass_word, full_name, age, avatar, gender, country } =
-                updateUserDto;
-            const updatedUser = await this.prisma.user.update({
-                data: {
-                    pass_word,
-                    full_name,
-                    age,
-                    avatar,
-                    gender,
-                    country,
-                },
+        if (!existingUser) notFound('Người dùng không tồn tại');
+        const newUser = await this.prisma.user_info.update({
+            where: {
+                user_id: id,
+            },
+            data: {
+                age: updateUserDto.age,
+                gender: updateUserDto.gender,
+                country: updateUserDto.country,
+                study_at: updateUserDto.study_at,
+                working_at: updateUserDto.working_at,
+                favorites: updateUserDto.favorites,
+            },
+        });
+        return successCode(200, 'Cập nhật user thành công', newUser);
+    }
+
+    // Block user --> is_active = false
+    async blockUser(id: number) {
+        const existingUser = await this.prisma.user.findFirst({
+            where: {
+                user_id: id,
+            },
+        });
+        if (!existingUser) notFound('Người dùng không tồn tại');
+        if (existingUser.is_active === true) {
+            const newUser = await this.prisma.user.update({
                 where: {
                     user_id: id,
                 },
+                data: {
+                    is_active: false,
+                },
             });
-            return successCode(200, 'Cập nhật user thành công', updatedUser);
+            return successCode(200, 'Khóa user thành công', newUser);
         } else {
-            notFound('User không tồn tại');
-        }
-    }
-
-    // Vì là soft delete nên ta sẽ đổi thành update
-    async remove(id: number) {
-        // tim user cần delete
-        let newData = await this.prisma.user.findFirst({
-            where: {
-                user_id: id,
-            },
-        });
-        if (newData) {
-            if (newData.is_deleted == true) {
-                return {
-                    message: `Nguời dùng có ID: ${id} đã được xóa trước đây`,
-                    content: newData,
-                };
-            } else {
-                // thay đổi is_delete
-                newData.is_deleted = true;
-                // update lại user
-                await this.prisma.user.update({
-                    data: newData,
-                    where: {
-                        user_id: id,
-                    },
-                });
-            }
-            return {
-                message: `Xóa người dùng có ID: ${id} thành công`,
-                content: newData,
-            };
-        } else {
-            notFound('User không tồn tại');
+            conflict('Người dùng đã bị khóa trước đây');
         }
     }
 }

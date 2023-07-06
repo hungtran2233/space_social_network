@@ -24,16 +24,12 @@ export class CommentController {
     constructor(private readonly commentService: CommentService) {}
 
     // Tạo comment cho post
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Post('/create-post-comment/:id')
-    create(
-        @Param('id') id: string,
-        @Req() req: any,
-        @Body() createCommentDto: CreateCommentDto,
-    ) {
+    @Post('/create-post-comment')
+    create(@Req() req: any, @Body() createCommentDto: CreateCommentDto) {
         try {
-            return this.commentService.create(+id, req, createCommentDto);
+            return this.commentService.create(req, createCommentDto);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
@@ -43,7 +39,7 @@ export class CommentController {
     }
 
     // Lấy tất cả comment của post
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Get('/get-all-post-comment/:id')
     findAllPostComment(@Param('id') id: string, @Req() req: any) {
@@ -65,17 +61,82 @@ export class CommentController {
         return this.commentService.update(+id, updateCommentDto);
     }
 
-    // Xóa comment
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    // Xóa comment post của chính chủ user
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Delete('/delete-comment/:postId/:commentId')
-    remove(
+    @Delete('/delete-post-comment/:postId')
+    removePostComment(
         @Param('postId') postId: string,
-        @Param('commentId') commentId: string,
+        @Body() createCommentDto: CreateCommentDto,
         @Req() req: any,
     ) {
         try {
-            return this.commentService.remove(+postId, +commentId, req);
+            return this.commentService.removePostComment(
+                +postId,
+                createCommentDto,
+                req,
+            );
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    ////////////////////////////////////
+    // Image
+    // Tạo comment cho image
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Post('/create-image-comment')
+    createImageComment(
+        @Req() req: any,
+        @Body() createCommentDto: CreateCommentDto,
+    ) {
+        try {
+            return this.commentService.createImageComment(
+                req,
+                createCommentDto,
+            );
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    // Lấy tất cả comment của image
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/get-all-image-comment/:id')
+    findAllImageComment(@Param('id') id: string, @Req() req: any) {
+        try {
+            return this.commentService.findAllImageComment(+id, req);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    // Xóa comment image của chính chủ user
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Delete('/delete-image-comment/:imageId')
+    removeImageComment(
+        @Param('imageId') imageId: string,
+        @Body() createCommentDto: CreateCommentDto,
+        @Req() req: any,
+    ) {
+        try {
+            return this.commentService.removeImageComment(
+                +imageId,
+                createCommentDto,
+                req,
+            );
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',

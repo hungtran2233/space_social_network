@@ -69,6 +69,7 @@ export class FriendShipController {
         }
     }
 
+    // Tìm kiếm thông tin của 1 người bạn trong danh sách bạn bè
     // @Get(':id')
     // findOne(@Param('id') id: string) {
     //     return this.friendShipService.findOne(+id);

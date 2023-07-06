@@ -39,7 +39,7 @@ export class RolesGuard implements CanActivate {
 
         // So sánh 2 token với nhau ==> user on/off
         if (tokenReq === tokenFromDB) {
-            // Nếu từ token user trả về thuộc 1 trong các quyền từ @RoleDecorator(Role.ADMIN, Role.USER)
+            // Nếu từ token user trả về thuộc 1 trong các quyền từ @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
             //  return => true/false
             return requiredRoles.some((role) => role === userRoleName);
         } else {

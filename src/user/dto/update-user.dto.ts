@@ -2,10 +2,12 @@ import { PartialType } from '@nestjs/mapped-types';
 import { CreateUserDto } from './create-user.dto';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
-    pass_word?: string;
     full_name?: string;
     age?: number;
-    avatar?: string;
+    cover_image?: string;
     gender?: string;
     country?: string;
+    study_at?: string;
+    working_at?: string;
+    favorites?: string;
 }

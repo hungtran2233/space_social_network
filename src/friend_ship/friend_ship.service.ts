@@ -14,13 +14,13 @@ export class FriendShipService {
         // 1/ Kiểm tra xem user mình muốn kết bạn có tồn tại hay không
         const existingUser = await this.prisma.user.findFirst({
             where: {
-                user_id: createFriendShipDto.user_id,
+                user_id: createFriendShipDto.receive_user_id,
             },
         });
         if (!existingUser)
             notFound('Người dùng bạn muốn kết bạn không tồn tại');
 
-        if (myInfo.user_id === createFriendShipDto.user_id)
+        if (myInfo.user_id === createFriendShipDto.receive_user_id)
             conflict('Không thể gửi lời mời cho chính bạn');
 
         // 2/ Kiểm tra xem cả 2 đã là bạn bè hay chưa => status='accepted'
@@ -29,10 +29,10 @@ export class FriendShipService {
                 OR: [
                     {
                         user_id_1: myInfo.user_id,
-                        user_id_2: createFriendShipDto.user_id,
+                        user_id_2: createFriendShipDto.receive_user_id,
                     },
                     {
-                        user_id_1: createFriendShipDto.user_id,
+                        user_id_1: createFriendShipDto.receive_user_id,
                         user_id_2: myInfo.user_id,
                     },
                 ],
@@ -42,20 +42,20 @@ export class FriendShipService {
 
         if (existingFriendShip)
             conflict(
-                `Bạn đang là bạn bè với UserId=${createFriendShipDto.user_id}`,
+                `Bạn đang là bạn bè với UserId=${createFriendShipDto.receive_user_id}`,
             );
 
         // 3/ Kiểm tra xem mình có nhận được lời mời kết bạn từ user đó hay chưa
         const existingReceived = await this.prisma.friend_ship.findFirst({
             where: {
-                user_id_1: createFriendShipDto.user_id,
+                user_id_1: createFriendShipDto.receive_user_id,
                 user_id_2: myInfo.user_id,
                 status: 'pending',
             },
         });
         if (existingReceived) {
             conflict(
-                `UserId=${createFriendShipDto.user_id} đã gửi cho bạn lời mời trước đây, hãy xác nhận nó`,
+                `UserId=${createFriendShipDto.receive_user_id} đã gửi cho bạn lời mời trước đây, hãy xác nhận nó`,
             );
         }
 
@@ -63,7 +63,7 @@ export class FriendShipService {
         const existingSend = await this.prisma.friend_ship.findFirst({
             where: {
                 user_id_1: myInfo.user_id,
-                user_id_2: createFriendShipDto.user_id,
+                user_id_2: createFriendShipDto.receive_user_id,
                 status: 'pending',
             },
         });
@@ -73,7 +73,7 @@ export class FriendShipService {
             await this.prisma.friend_ship.create({
                 data: {
                     user_id_1: myInfo.user_id,
-                    user_id_2: createFriendShipDto.user_id,
+                    user_id_2: createFriendShipDto.receive_user_id,
                     status: 'pending',
                 },
             });
@@ -84,7 +84,7 @@ export class FriendShipService {
             );
         } else {
             conflict(
-                `Bạn đã gửi lời mời cho UserId=${createFriendShipDto.user_id} trước đây rồi, đang chờ phản hồi`,
+                `Bạn đã gửi lời mời cho UserId=${createFriendShipDto.receive_user_id} trước đây rồi, đang chờ phản hồi`,
             );
         }
     }

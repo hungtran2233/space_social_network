@@ -24,19 +24,13 @@ import { RolesGuard } from 'src/auth/guard/role.guard';
 export class ImageListController {
     constructor(private readonly imageListService: ImageListService) {}
 
-    // Thêm
-    @RoleDecorator(Role.ADMIN, Role.USER)
+    // Tạo image list
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Post('/create')
-    create(@Body() createImageListDto: CreateImageListDto, @Req() req) {
-        return this.imageListService.create(createImageListDto, req);
-    }
-
-    // Lấy tất cả
-    @Get('/get-all')
-    findAll() {
+    create(@Body() createImageListDto: CreateImageListDto, @Req() req: any) {
         try {
-            return this.imageListService.findAll();
+            return this.imageListService.create(createImageListDto, req);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
@@ -45,20 +39,38 @@ export class ImageListController {
         }
     }
 
-    // Lấy 1
+    // Lấy tất cả image list
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/get-all-image-list')
+    findAll(@Req() req: any) {
+        try {
+            return this.imageListService.findAll(req);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    // Tìm 1 danh sách dựa vào id
     @Get('/get-one/:id')
     findOne(@Param('id') id: string) {
         return this.imageListService.findOne(+id);
     }
 
     // Cập nhật
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Put('/update-image-list/:id')
     update(
         @Param('id') id: string,
         @Body() updateImageListDto: UpdateImageListDto,
+        @Req() req: any,
     ) {
         try {
-            return this.imageListService.update(+id, updateImageListDto);
+            return this.imageListService.update(+id, updateImageListDto, req);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
@@ -67,11 +79,13 @@ export class ImageListController {
         }
     }
 
-    // Xóa
+    // Xóa image list của mình
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Delete('/delete-image-list/:id')
-    remove(@Param('id') id: string) {
+    remove(@Param('id') id: string, @Req() req: any) {
         try {
-            return this.imageListService.remove(+id);
+            return this.imageListService.remove(+id, req);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',

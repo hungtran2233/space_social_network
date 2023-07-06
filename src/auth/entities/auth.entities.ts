@@ -12,7 +12,7 @@ import {
     Max,
 } from 'class-validator';
 
-class UserLoginType {
+export class UserLoginType {
     @IsEmail()
     email: string;
 
@@ -20,44 +20,35 @@ class UserLoginType {
     pass_word: string;
 }
 
-class UserSignUpType {
+export class UserSignUpType {
     @IsEmail()
     email: string;
-
     @IsString()
     pass_word: string;
-
     @IsString()
     full_name: string;
 }
 
-class UpdateUserInfoType {
+export class UpdateUserInfoType {
     @IsString()
     full_name: string;
-
     @IsInt()
     age: number;
-
-    @IsString()
-    avatar: string;
     @IsString()
     gender: string;
     @IsString()
     country: string;
+    @IsString()
+    study_at: string;
+    @IsString()
+    working_at: string;
+    @IsString()
+    favorites: string;
 }
 
-class ChangePasswordType {
+export class ChangePasswordType {
     @IsString()
     old_pass_word: string;
     @IsString()
     new_pass_word: string;
 }
-
-//// ADMIN
-
-export {
-    UserLoginType,
-    UserSignUpType,
-    UpdateUserInfoType,
-    ChangePasswordType,
-};

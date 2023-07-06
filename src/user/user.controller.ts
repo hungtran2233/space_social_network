@@ -12,6 +12,7 @@ import {
     HttpException,
     HttpStatus,
     UseGuards,
+    Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -36,9 +37,9 @@ export class UserController {
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Post('/create-user')
     @HttpCode(201)
-    create(@Body() createUserDto: CreateUserDto) {
+    create(@Body() createUserDto: CreateUserDto, @Req() req: any) {
         try {
-            return this.userService.create(createUserDto);
+            return this.userService.create(createUserDto, req);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
@@ -63,18 +64,14 @@ export class UserController {
         }
     }
 
-    // Lấy tất cả user, bao gồm cả user đã bị xóa
+    // Lấy tất cả user, bao gồm cả user đã bị khóa
     @RoleDecorator(Role.ADMIN)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Get('/get-user')
     @HttpCode(200)
-    findAll(): Promise<{
-        message: string;
-        statusCode: number;
-        content: user[];
-    }> {
+    findAll(@Req() req: any) {
         try {
-            return this.userService.findAll();
+            return this.userService.findAll(req);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
@@ -99,8 +96,7 @@ export class UserController {
     @HttpCode(200)
     update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
         try {
-            const updateData: UpdateUserDto = {};
-            return this.userService.update(+id, updateData);
+            return this.userService.update(+id, updateUserDto);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
@@ -109,12 +105,12 @@ export class UserController {
         }
     }
 
-    // Xóa
+    // Block user
     @RoleDecorator(Role.ADMIN)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Delete('/delete-user/:id')
+    @Put('/block-user/:id')
     @HttpCode(200)
-    remove(@Param('id') id: string) {
-        return this.userService.remove(+id);
+    blockUser(@Param('id') id: string) {
+        return this.userService.blockUser(+id);
     }
 }
