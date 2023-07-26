@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateFriendShipDto } from './dto/create-friend_ship.dto';
-import { UpdateFriendShipDto } from './dto/update-friend_ship.dto';
 import { PrismaClient } from '@prisma/client';
 import { conflict, notFound, successCode } from 'config/Response';
 

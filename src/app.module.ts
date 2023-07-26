@@ -11,6 +11,7 @@ import { PostModule } from './post/post.module';
 import { FriendShipModule } from './friend_ship/friend_ship.module';
 import { CommentModule } from './comment/comment.module';
 import { LikeModule } from './like/like.module';
+import { NewsModule } from './news/news.module';
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import { LikeModule } from './like/like.module';
         FriendShipModule,
         CommentModule,
         LikeModule,
+        NewsModule,
     ],
     controllers: [AppController],
     providers: [AppService],

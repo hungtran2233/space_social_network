@@ -20,7 +20,6 @@ import {
     successCode,
     unauthorized,
 } from 'config/Response';
-import { getTimeExpiresByToken, getTimeNowVN } from 'config/FormatDateTime';
 
 @Injectable()
 export class AuthService {
@@ -53,7 +52,7 @@ export class AuthService {
                     data: {
                         ...userSignUp,
                         pass_word: hashedPassword,
-                        full_name: userSignUp.email,
+                        full_name: userSignUp.full_name,
                         avatar: '/public/default/default-avatar.png',
                     },
                 });
@@ -74,6 +73,8 @@ export class AuthService {
                     data: {
                         ...userSignUp,
                         pass_word: hashedPassword,
+                        full_name: userSignUp.full_name,
+                        avatar: '/public/default/default-avatar.png',
                     },
                 });
 

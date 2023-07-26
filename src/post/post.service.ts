@@ -77,12 +77,28 @@ export class PostService {
 
     // Hiển thị tất cả bài post công khai Lấy tất cả bài post của tất cả user có privacy_id=1  (public)
     async findAll() {
-        const allPost = await this.prisma.post.findMany({
-            where: {
-                is_deleted: false,
-                privacy_id: 1,
-            },
-        });
+        const allPost = await this.prisma.$queryRaw`
+            SELECT 
+                p.post_id,
+                p.user_id,
+                p.content,
+                p.video_url,
+                CASE WHEN COUNT(i.image_id) = 0 THEN JSON_ARRAY() ELSE 
+                JSON_ARRAYAGG(JSON_OBJECT('image_id', i.image_id, "image_name", i.image_name,  
+                'path', i.path,  'description', i.description)) 
+                END AS arr_img
+            FROM
+                post p
+            LEFT JOIN
+                post_image pi ON p.post_id = pi.post_id
+            LEFT JOIN
+                image i ON pi.image_id = i.image_id
+            WHERE
+                p.privacy_id = 1 and p.is_deleted = 0
+            GROUP BY
+                p.post_id;
+        `;
+
         if (allPost) {
             return successCode(
                 200,
