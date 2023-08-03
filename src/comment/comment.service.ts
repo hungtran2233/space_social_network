@@ -11,7 +11,6 @@ export class CommentService {
     // Tạo comment cho  POST
     async create(req: any, createCommentDto: CreateCommentDto) {
         const myInfo = req.user.data;
-
         // Kiểm tra và xác thực dữ liệu
         if (
             !req.body.hasOwnProperty('post_id') ||
@@ -20,15 +19,14 @@ export class CommentService {
             // Trả về lỗi nếu thiếu các key bắt buộc
             return badRequest('Thiếu hoặc sai thông tin bắt buộc trong body');
         }
+        if (createCommentDto.content == null)
+            badRequest('Bạn chưa viết comment');
         // Tìm bài post ta đang định comment
         const existingPost = await this.prisma.post.findFirst({
             where: {
                 post_id: createCommentDto.post_id,
             },
         });
-
-        if (createCommentDto.content == null)
-            badRequest('Bạn chưa viết comment');
 
         if (existingPost) {
             const newComment = await this.prisma.comment.create({

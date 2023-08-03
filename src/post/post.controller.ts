@@ -29,7 +29,7 @@ import { diskStorage } from 'multer';
 export class PostController {
     constructor(private readonly postService: PostService) {}
 
-    // Tạo bài post
+    // Tạo bài post (giới hạn "20" tấm ảnh được upload 1 lần)
     @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @UseInterceptors(
