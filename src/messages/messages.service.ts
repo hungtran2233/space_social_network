@@ -3,47 +3,40 @@ import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { Message } from './entities/message.entity';
 import { PrismaClient } from '@prisma/client';
+import { Socket } from 'socket.io';
 
 @Injectable()
 export class MessagesService {
-    private readonly prisma: PrismaClient;
+    prisma = new PrismaClient();
 
-    constructor() {
-        this.prisma = new PrismaClient();
-    }
-    messages: Message[] = [{ name: 'Marius', text: 'heyooo' }];
+    clientToUser = {}; // cấu trúc dữ liệu để lưu lại clientName và clientId
 
-    clientToUser = {};
+    ///////////////
+    private messages: any[] = [];
+
     identify(name: string, clientId: string) {
+        // ánh xạ từ id thành name
         this.clientToUser[clientId] = name;
-        return Object.values(this.clientToUser); // tìm ra ai hiện đang trực tuyến
+        // tìm ra ai hiện đang trực tuyến (tên của người đó)
+        return Object.values(this.clientToUser);
     }
 
+    //
     getClientName(clientId: string) {
         return this.clientToUser[clientId];
     }
 
-    create(createMessageDto: CreateMessageDto, clientId: string) {
-        const message = {
-            name: this.clientToUser[clientId],
-            text: createMessageDto.text,
-        };
-
-        this.messages.push(message);
-
-        return message;
+    // Tạo tin nhắn
+    async create(createMessageDto: CreateMessageDto, client: Socket) {
+        return '';
     }
 
-    async findAll() {
-        // database: thêm truy vấn vào đây
-        // const msg = await this.prisma.msg_message.findFirst({
-        //     where: {
-        //         message_id: 1,
-        //     },
-        // });
-        // const q = [{ name: msg.sender_id, text: msg.content }];
-        // //
-        // return q;
-        return this.messages;
+    // Tìm tin nhắn cũ
+    async findAllMessages(conversationId: number) {
+        return this.prisma.msg_message.findMany({
+            where: {
+                conversation_id: conversationId,
+            },
+        });
     }
 }

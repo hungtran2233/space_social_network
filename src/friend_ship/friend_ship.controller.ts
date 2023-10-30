@@ -54,7 +54,22 @@ export class FriendShipController {
         }
     }
 
-    // Show tất cả bạn bè của user
+    // Kiểm tra trạng thái bạn bè của mình với người khác ==> dùng khi vào trang cá nhân của người khác
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Post('/check-friendship-status/:link_url')
+    checkFriendShipStatus(@Req() req: any, @Param('link_url') linkUrl: string) {
+        try {
+            return this.friendShipService.checkFriendShipStatus(req, linkUrl);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    // Show tất cả bạn bè của mình
     @RoleDecorator(Role.ADMIN, Role.USER)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Get('/show-all-friends')

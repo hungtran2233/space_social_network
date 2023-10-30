@@ -43,7 +43,7 @@ model friend_ship {
   created_at                       DateTime?           @default(now()) @db.Timestamp(0)
   updated_at                       DateTime?           @db.Timestamp(0)
   user_friend_ship_user_id_1Touser user?               @relation("friend_ship_user_id_1Touser", fields: [user_id_1], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "friend_ship_ibfk_1")
-  user_friend_ship_user_id_2Touser user?               @relation("friend_ship_user_id_2Touser", fields: [user_id_2], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "friend_ship_ibfk_2")
+  user_friend_ship_user_id_2Touser  user?               @relation("friend_ship_user_id_2Touser", fields: [user_id_2], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "friend_ship_ibfk_2")
 
   @@index([user_id_1], map: "user_id_1")
   @@index([user_id_2], map: "user_id_2")
@@ -94,76 +94,50 @@ model image_list {
 }
 
 model msg_conversation {
-  conversation_id   Int               @id @default(autoincrement())
-  conversation_name String?           @db.VarChar(255)
-  creator_id        Int?
-  created_at        DateTime?         @default(now()) @db.Timestamp(0)
-  user              user?             @relation(fields: [creator_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_conversation_ibfk_1")
-  msg_message       msg_message[]
-  msg_participant   msg_participant[]
+  conversation_id                       Int                     @id @default(autoincrement())
+  conversation_name                     String?                 @db.VarChar(255)
+  user_id_1                             Int?
+  user_id_2                             Int?
+  is_one_to_one                         Boolean?                @default(true)
+  uuid_v4                               String?                 @db.VarChar(255)
+  created_at                            DateTime?               @default(now()) @db.Timestamp(0)
+  user_msg_conversation_user_id_1Touser user?                   @relation("msg_conversation_user_id_1Touser", fields: [user_id_1], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_conversation_ibfk_1")
+  user_msg_conversation_user_id_2Touser user?                   @relation("msg_conversation_user_id_2Touser", fields: [user_id_2], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_conversation_ibfk_2")
+  msg_message                           msg_message[]
+  msg_user_conversation                 msg_user_conversation[]
 
-  @@index([creator_id], map: "creator_id")
+  @@index([user_id_1], map: "user_id_1")
+  @@index([user_id_2], map: "user_id_2")
 }
 
 model msg_message {
-  message_id       Int               @id @default(autoincrement())
-  conversation_id  Int?
-  sender_id        Int?
-  content          String?           @db.VarChar(5000)
-  created_at       DateTime?         @default(now()) @db.Timestamp(0)
-  user             user?             @relation(fields: [sender_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_message_ibfk_1")
-  msg_conversation msg_conversation? @relation(fields: [conversation_id], references: [conversation_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_message_ibfk_2")
-  notification     notification[]
+  message_id              Int                       @id @default(autoincrement())
+  conversation_id         Int?
+  sender_id               Int?
+  content                 String?                   @db.VarChar(5000)
+  created_at              DateTime?                 @default(now()) @db.Timestamp(0)
+  user                    user?                     @relation(fields: [sender_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_message_ibfk_1")
+  msg_conversation        msg_conversation?         @relation(fields: [conversation_id], references: [conversation_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_message_ibfk_2")
+  msg_message_read_status msg_message_read_status[]
 
   @@index([conversation_id], map: "conversation_id")
   @@index([sender_id], map: "sender_id")
 }
 
-model msg_participant {
-  participant_id   Int               @id @default(autoincrement())
-  user_id          Int?
-  conversation_id  Int?
-  joined_datetime  DateTime?         @db.DateTime(0)
-  left_datetime    DateTime?         @db.DateTime(0)
-  user             user?             @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_participant_ibfk_1")
-  msg_conversation msg_conversation? @relation(fields: [conversation_id], references: [conversation_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_participant_ibfk_2")
-
-  @@index([conversation_id], map: "conversation_id")
-  @@index([user_id], map: "user_id")
-}
-
-model notification {
-  notification_id Int                @id @default(autoincrement())
-  user_id         Int?
-  type            notification_type?
-  post_id         Int?
-  message_id      Int?
-  is_read         Boolean?           @default(false)
-  created_at      DateTime?          @default(now()) @db.Timestamp(0)
-  user            user?              @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "notification_ibfk_1")
-  post            post?              @relation(fields: [post_id], references: [post_id], onDelete: Cascade, onUpdate: NoAction, map: "notification_ibfk_2")
-  msg_message     msg_message?       @relation(fields: [message_id], references: [message_id], onDelete: Cascade, onUpdate: NoAction, map: "notification_ibfk_3")
-
-  @@index([message_id], map: "message_id")
-  @@index([post_id], map: "post_id")
-  @@index([user_id], map: "user_id")
-}
-
 model post {
-  post_id      Int            @id @default(autoincrement())
-  user_id      Int?
-  content      String?        @db.VarChar(5000)
-  video_url    String?        @db.VarChar(1000)
-  privacy_id   Int?
-  created_at   DateTime?      @default(now()) @db.Timestamp(0)
-  updated_at   DateTime?      @db.Timestamp(0)
-  is_deleted   Boolean?       @default(false)
-  comment      comment[]
-  notification notification[]
-  user         user?          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_1")
-  privacy      privacy?       @relation(fields: [privacy_id], references: [privacy_id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_2")
-  post_image   post_image[]
-  post_like    post_like[]
+  post_id    Int          @id @default(autoincrement())
+  user_id    Int?
+  content    String?      @db.VarChar(5000)
+  video_url  String?      @db.VarChar(1000)
+  privacy_id Int?
+  created_at DateTime?    @default(now()) @db.Timestamp(0)
+  updated_at DateTime?    @db.Timestamp(0)
+  is_deleted Boolean?     @default(false)
+  comment    comment[]
+  user       user?        @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_1")
+  privacy    privacy?     @relation(fields: [privacy_id], references: [privacy_id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_2")
+  post_image post_image[]
+  post_like  post_like[]
 
   @@index([privacy_id], map: "privacy_id")
   @@index([user_id], map: "user_id")
@@ -253,31 +227,33 @@ model session {
 }
 
 model user {
-  user_id                                    Int                @id @default(autoincrement())
-  email                                      String?            @db.VarChar(100)
-  pass_word                                  String?            @db.VarChar(100)
-  full_name                                  String?            @db.VarChar(100)
-  avatar                                     String?            @db.VarChar(255)
-  is_active                                  Boolean?           @default(true)
-  comment                                    comment[]
-  comment_like                               comment_like[]
-  friend_ship_friend_ship_user_id_1Touser    friend_ship[]      @relation("friend_ship_user_id_1Touser")
-  friend_ship_friend_ship_user_id_2Touser    friend_ship[]      @relation("friend_ship_user_id_2Touser")
-  image_like                                 image_like[]
-  image_list                                 image_list[]
-  msg_conversation                           msg_conversation[]
-  msg_message                                msg_message[]
-  msg_participant                            msg_participant[]
-  news                                       news[]
-  notification                               notification[]
-  post                                       post[]
-  post_like                                  post_like[]
-  ro_role                                    ro_role[]
-  save_image                                 save_image[]
-  session                                    session[]
-  user_follow_user_follow_follower_idTouser  user_follow[]      @relation("user_follow_follower_idTouser")
-  user_follow_user_follow_following_idTouser user_follow[]      @relation("user_follow_following_idTouser")
-  user_info                                  user_info?
+  user_id                                           Int                       @id @default(autoincrement())
+  email                                             String?                   @db.VarChar(100)
+  pass_word                                         String?                   @db.VarChar(100)
+  full_name                                         String?                   @db.VarChar(100)
+  avatar                                            String?                   @db.VarChar(255)
+  link_url                                          String?                   @db.VarChar(255)
+  is_active                                         Boolean?                  @default(true)
+  comment                                           comment[]
+  comment_like                                      comment_like[]
+  friend_ship_friend_ship_user_id_1Touser           friend_ship[]             @relation("friend_ship_user_id_1Touser")
+  friend_ship_friend_ship_user_id_2Touser           friend_ship[]             @relation("friend_ship_user_id_2Touser")
+  image_like                                        image_like[]
+  image_list                                        image_list[]
+  msg_conversation_msg_conversation_user_id_1Touser msg_conversation[]        @relation("msg_conversation_user_id_1Touser")
+  msg_conversation_msg_conversation_user_id_2Touser msg_conversation[]        @relation("msg_conversation_user_id_2Touser")
+  msg_message                                       msg_message[]
+  msg_message_read_status                           msg_message_read_status[]
+  msg_user_conversation                             msg_user_conversation[]
+  news                                              news[]
+  post                                              post[]
+  post_like                                         post_like[]
+  ro_role                                           ro_role[]
+  save_image                                        save_image[]
+  session                                           session[]
+  user_follow_user_follow_follower_idTouser         user_follow[]             @relation("user_follow_follower_idTouser")
+  user_follow_user_follow_following_idTouser        user_follow[]             @relation("user_follow_following_idTouser")
+  user_info                                         user_info?
 }
 
 model user_follow {
@@ -316,9 +292,29 @@ model news {
   @@index([user_id], map: "user_id")
 }
 
-enum notification_type {
-  post
-  message
+model msg_user_conversation {
+  user_conversation_id Int               @id @default(autoincrement())
+  user_id              Int?
+  conversation_id      Int?
+  joined_datetime      DateTime?         @db.DateTime(0)
+  left_datetime        DateTime?         @db.DateTime(0)
+  user                 user?             @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_user_conversation_ibfk_1")
+  msg_conversation     msg_conversation? @relation(fields: [conversation_id], references: [conversation_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_user_conversation_ibfk_2")
+
+  @@index([conversation_id], map: "conversation_id")
+  @@index([user_id], map: "user_id")
+}
+
+model msg_message_read_status {
+  message_read_status_id Int          @id @default(autoincrement())
+  message_id             Int?
+  user_id                Int?
+  is_read                Boolean?
+  msg_message            msg_message? @relation(fields: [message_id], references: [message_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_message_read_status_ibfk_1")
+  user                   user?        @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "msg_message_read_status_ibfk_2")
+
+  @@index([message_id], map: "message_id")
+  @@index([user_id], map: "user_id")
 }
 
 enum ro_role_role_name {

@@ -20,6 +20,8 @@ import {
     successCode,
     unauthorized,
 } from 'config/Response';
+import { v4 as uuidv4 } from 'uuid';
+import { validate } from 'class-validator';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +36,14 @@ export class AuthService {
 
     // Đăng ký
     async signUp(userSignUp: UserSignUpType, headers: any) {
+        // // Kiểm tra định dạng email
+        // const validationErrors = await validate(userSignUp);
+
+        // if (validationErrors.length > 0) {
+        //     // Có lỗi, xử lý lỗi ở đây
+        //     return { error: 'Dữ liệu không hợp lệ', validationErrors };
+        // }
+
         const existingUser = await this.prisma.user.findFirst({
             where: {
                 email: userSignUp.email,
@@ -54,6 +64,7 @@ export class AuthService {
                         pass_word: hashedPassword,
                         full_name: userSignUp.full_name,
                         avatar: '/public/default/default-avatar.png',
+                        link_url: uuidv4(),
                     },
                 });
 
@@ -75,6 +86,7 @@ export class AuthService {
                         pass_word: hashedPassword,
                         full_name: userSignUp.full_name,
                         avatar: '/public/default/default-avatar.png',
+                        link_url: uuidv4(),
                     },
                 });
 
@@ -254,7 +266,7 @@ export class AuthService {
                 working_at,
                 favorites,
             } = updateUserInfo;
-            const newFullName = await this.prisma.user.update({
+            await this.prisma.user.update({
                 where: {
                     user_id: myInfo.user_id,
                 },
@@ -262,7 +274,7 @@ export class AuthService {
                     full_name,
                 },
             });
-            const newUserInfo = await this.prisma.user_info.update({
+            await this.prisma.user_info.update({
                 data: {
                     age,
                     gender,
@@ -276,10 +288,21 @@ export class AuthService {
                 },
             });
 
-            return successCode(200, 'Cập nhật thông tin user thành công', {
-                newFullName,
-                newUserInfo,
+            //
+            const newUser = await this.prisma.user.findFirst({
+                where: {
+                    user_id: myInfo.user_id,
+                },
+                include: {
+                    user_info: true,
+                },
             });
+
+            return successCode(
+                200,
+                'Cập nhật thông tin user thành công',
+                newUser,
+            );
         } else {
             unauthorized('Không đủ quyền truy cập hoặc token đã hết hạn');
         }
@@ -292,7 +315,7 @@ export class AuthService {
 
         await this.prisma.user.update({
             data: {
-                avatar: fileUpload.filename,
+                avatar: `/public/img/${fileUpload.filename}`,
             },
             where: {
                 user_id: myInfo.user_id,
@@ -311,7 +334,7 @@ export class AuthService {
         await this.prisma.image.create({
             data: {
                 image_name: fileUpload.originalname,
-                path: fileUpload.filename,
+                path: `/public/img/${fileUpload.filename}`,
                 image_list_id: findImageList.image_list_id,
             },
         });
@@ -330,7 +353,7 @@ export class AuthService {
 
         await this.prisma.user_info.update({
             data: {
-                cover_image: fileUpload.filename,
+                cover_image: `/public/img/${fileUpload.filename}`,
             },
             where: {
                 user_id: myInfo.user_id,

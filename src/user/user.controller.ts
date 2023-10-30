@@ -113,4 +113,53 @@ export class UserController {
     blockUser(@Param('id') id: string) {
         return this.userService.blockUser(+id);
     }
+
+    //////////////////////
+    // Message - lấy tất cả user
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/get-all-user')
+    getAllUser(@Req() req: any) {
+        try {
+            return this.userService.getAllUser(req);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    /////// OTHER USER
+    // Tìm user thông qua link-url ==> lấy tất cả table user, user_info, post, image_list
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/get-user-from-link-url/total-info-other-user/:linkUrl')
+    @HttpCode(200)
+    findUserInfoFromLink(@Param('linkUrl') linkUrl: string) {
+        try {
+            return this.userService.findUserInfoFromLink(linkUrl);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    // Lấy ra danh sách bạn bè --> hiển thị lên tab "bạn bè"
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/get-user-from-link-url/show-on-friend/:linkUrl')
+    @HttpCode(200)
+    findFriendOtherUser(@Param('linkUrl') linkUrl: string) {
+        try {
+            return this.userService.findFriendOtherUser(linkUrl);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
 }

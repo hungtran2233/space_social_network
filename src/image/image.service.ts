@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateImageDto } from './dto/create-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
 import { PrismaClient } from '@prisma/client';
-import { conflict, notFound, successCode } from 'config/Response';
+import { badRequest, conflict, notFound, successCode } from 'config/Response';
 import { Image } from './entities/image.entity';
 
 @Injectable()
@@ -36,6 +36,33 @@ export class ImageService {
         return successCode(200, 'Upload ảnh thành công', fileUpload);
     }
 
+    // Upload ảnh vào album cá nhân
+    async uploadImageForAlbum(
+        req: any,
+        filesUpload: Express.Multer.File,
+        descImg: string,
+        imgListId: number,
+    ) {
+        // Thêm một hoặc nhiều ảnh này vào table image
+        const newFiles = JSON.parse(JSON.stringify(filesUpload));
+        // console.log(newFiles);
+        if (newFiles && newFiles.length > 0) {
+            const images = newFiles.map((files) => ({
+                image_name: files.originalname,
+                path: files.filename,
+                description: descImg,
+                image_list_id: +imgListId,
+                is_delete: false,
+            }));
+            const newImages = await this.prisma.image.createMany({
+                data: images,
+            });
+            return successCode(200, 'Upload ảnh thành công', newImages);
+        } else {
+            badRequest('Bạn chưa chọn file ảnh');
+        }
+    }
+
     // Lấy tất cả ảnh table image
     async findAll() {
         const allImage = await this.prisma.image.findMany({
@@ -44,6 +71,17 @@ export class ImageService {
             },
         });
         return successCode(200, 'Lấy danh sách ảnh thành công', allImage);
+    }
+
+    // Lấy tất cả ảnh cá nhân
+    async findAllPersonalImage(req: any) {
+        // const myInfo = req.user.data;
+        // const allPersonalImage = await this.prisma.image.findMany({
+        //     where: {
+
+        //     }
+        // })
+        return 'chưa có';
     }
 
     // Chi tiết ảnh

@@ -34,21 +34,25 @@ export class ImageListService {
         }
     }
 
-    // Lấy tất cả image list của cá nhân user (ngoại trừ 2 cái mặc định là uploaded-images và saved-images)
+    // Lấy tất cả image list của cá nhân user (ngoại trừ 2 cái mặc định uploaded-images và saved-images)
     async findAll(req: any) {
         const myInfo = req.user.data;
         let myImageList = await this.prisma.image_list.findMany({
             where: {
                 user_id: myInfo.user_id,
-                NOT: {
-                    list_name: {
-                        in: ['uploaded-images', 'saved-images'],
-                    },
-                },
+                // NOT: {
+                //     list_name: {
+                //         in: ['uploaded-images', 'saved-images'],
+                //     },
+                // },
+            },
+            include: {
+                image: true,
             },
         });
         if (myImageList.length === 0)
-            notFound('Bộ sưu tập Image List của bạn đang trống');
+            // notFound('Bộ sưu tập Image List của bạn đang trống');
+            return successCode(200, 'Danh sách album của bạn đang trống', []);
         return successCode(
             200,
             'Lấy danh sách image-list thành công',

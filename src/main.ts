@@ -2,11 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as express from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as fs from 'fs';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
     // Kích hoạt CORS
+    // Bật CORS và cho phép truy cập từ mọi nguồn gốc
     app.enableCors();
 
     // Thêm tiền tố api

@@ -46,8 +46,12 @@ export class LikeService {
             });
             return successCode(
                 200,
-                'Bỏ like bài viết thành công',
-                `Deleted postLikeId=${createPostLikeDto.post_id}`,
+                `user_id=${myInfo.user_id} bỏ like post_id=${createPostLikeDto.post_id}`,
+                {
+                    user_id: myInfo.user_id,
+                    post_id: createPostLikeDto.post_id,
+                    isLike: false,
+                },
             );
         } else {
             const newPostLike = await this.prisma.post_like.create({
@@ -56,11 +60,10 @@ export class LikeService {
                     post_id: createPostLikeDto.post_id,
                 },
             });
-            return successCode(
-                200,
-                'Bạn đã like bài viết thành công',
-                newPostLike,
-            );
+            return successCode(200, 'Bạn đã like bài viết thành công', {
+                ...newPostLike,
+                isLike: true,
+            });
         }
     }
 

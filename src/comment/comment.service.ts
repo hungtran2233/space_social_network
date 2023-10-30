@@ -51,9 +51,27 @@ export class CommentService {
             },
         });
         if (existingPost) {
-            const allComment = await this.prisma.comment.findMany({
+            const allComment = await this.prisma.post.findFirst({
                 where: {
                     post_id: id,
+                },
+                select: {
+                    comment: {
+                        select: {
+                            comment_id: true,
+                            content: true,
+                            image_id: true,
+                            user: {
+                                select: {
+                                    user_id: true,
+                                    full_name: true,
+                                    avatar: true,
+                                    link_url: true,
+                                },
+                            },
+                            created_at: true,
+                        },
+                    },
                 },
             });
             return successCode(

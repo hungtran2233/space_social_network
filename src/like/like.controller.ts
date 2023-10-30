@@ -33,7 +33,7 @@ export class LikeController {
     // Post Like ---- Nhấn like - bỏ like
     @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Post('/post-like')
+    @Post('/like-post')
     actionPostLike(
         @Req() req: any,
         @Body() createPostLikeDto: CreatePostLikeDto,

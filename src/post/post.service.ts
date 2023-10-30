@@ -42,7 +42,7 @@ export class PostService {
             // 1/Map files để lưu nhiều image vào table image
             const images = newFiles.map((files) => ({
                 image_name: files.originalname,
-                path: files.filename,
+                path: `/public/img/${files.filename}`,
                 image_list_id: imgList.image_list_id,
                 is_delete: false,
             }));
@@ -117,13 +117,40 @@ export class PostService {
                 user_id: req.user.data.user_id,
                 is_deleted: false,
             },
+            include: {
+                user: true,
+                privacy: true,
+                post_like: {
+                    select: {
+                        user_id: true,
+                    },
+                },
+                comment: {
+                    include: {
+                        user: {
+                            select: {
+                                full_name: true,
+                                avatar: true,
+                            },
+                        },
+                    },
+                },
+                post_image: {
+                    include: {
+                        image: {
+                            select: {
+                                image_id: true,
+                                image_name: true,
+                                path: true,
+                                description: true,
+                            },
+                        },
+                    },
+                },
+            },
         });
-        if (myPost) {
-            successCode(200, 'Lấy danh sách bài viết thành công', myPost);
-        } else {
-            notFound('Bạn không có bài viết nào');
-        }
-        return myPost;
+
+        return successCode(200, 'Lấy danh sách bài viết thành công', myPost);
     }
 
     // Cập nhật bài viết

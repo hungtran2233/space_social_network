@@ -13,12 +13,13 @@ import {
     UseGuards,
     UseInterceptors,
     Put,
+    UploadedFiles,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ImageService } from './image.service';
 import { CreateImageDto } from './dto/create-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { Image } from './entities/image.entity';
 import { RoleDecorator } from 'src/auth/guard/role.decorator';
@@ -61,6 +62,44 @@ export class ImageController {
         }
     }
 
+    // Upload ảnh cho album cá nhân
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @UseInterceptors(
+        FilesInterceptor('files', 20, {
+            storage: diskStorage({
+                destination: process.cwd() + '/public/img',
+                filename: (req, file, callback) => {
+                    callback(
+                        null,
+                        new Date().getTime() + '_' + file.originalname,
+                    );
+                },
+            }),
+        }),
+    )
+    @Post('/create-image-for-album')
+    uploadImageForAlbum(
+        @Req() req: any,
+        @UploadedFiles() filesUpload: Express.Multer.File,
+        @Body('description') descImg: string,
+        @Body('image_list_id') imgListId: number,
+    ) {
+        try {
+            return this.imageService.uploadImageForAlbum(
+                req,
+                filesUpload,
+                descImg,
+                imgListId,
+            );
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
     // User xem toàn bộ ảnh của tất cả user trong hệ thống
     @Get('/get-all-image')
     findAll() {
@@ -74,8 +113,22 @@ export class ImageController {
         }
     }
 
-    // Lấy chi tiết ảnh
+    // User xem ảnh cá nhân của mình
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/get-all-personal-image')
+    findAllPersonalImage(@Req() req: any) {
+        try {
+            return this.imageService.findAllPersonalImage(req);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
 
+    // Lấy chi tiết ảnh
     @Get('/image-detail/:id')
     getImageDetail(@Param('id') id: string) {
         try {

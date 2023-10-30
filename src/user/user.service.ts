@@ -196,4 +196,147 @@ export class UserService {
             conflict('Người dùng đã bị khóa trước đây');
         }
     }
+
+    //// MESSAGE
+    // Message - lấy tất cả user gồm đang online hoặc offline
+    async getAllUser(req: any) {
+        const allUserInfo = await this.prisma.user.findMany({
+            select: {
+                user_id: true,
+                email: true,
+                full_name: true,
+                avatar: true,
+            },
+        });
+
+        const allUserOnline = await this.prisma.session.findMany({
+            where: {
+                is_online: true,
+            },
+            select: {
+                user_id: true,
+            },
+        });
+
+        // Tạo một Map để theo dõi trạng thái online của từng người dùng
+        const userOnlineMap = new Map<number, boolean>();
+        allUserOnline.forEach((session) => {
+            userOnlineMap.set(session.user_id, true);
+        });
+
+        // Tạo mảng kết quả với trạng thái online tương ứng
+        const result = allUserInfo.map((userInfo) => ({
+            user_id: userInfo.user_id,
+            email: userInfo.email,
+            full_name: userInfo.full_name,
+            avatar: userInfo.avatar,
+            is_online: userOnlineMap.has(userInfo.user_id), // Kiểm tra user_id trong Map
+        }));
+
+        return successCode(200, 'Lấy danh sách người dùng thành công', result);
+    }
+
+    /// OTHER USER
+    // Bạn tìm user khác thông qua link url
+
+    // Lấy thông tin đối phương bằng link url
+    async findUserInfoFromLink(linkUrl: string) {
+        const user = await this.prisma.user.findFirst({
+            where: {
+                link_url: linkUrl,
+                is_active: true,
+            },
+
+            select: {
+                user_id: true,
+                email: true,
+                full_name: true,
+                avatar: true,
+                link_url: true,
+                ////////
+                user_info: true,
+                post: {
+                    select: {
+                        post_id: true,
+                        content: true,
+                        video_url: true,
+                        created_at: true,
+                        updated_at: true,
+                        /////
+                        privacy: true,
+                        ////
+                        post_like: {
+                            select: {
+                                user_id: true,
+                            },
+                        },
+                        post_image: {
+                            select: {
+                                image: true,
+                            },
+                        },
+                        comment: {
+                            select: {
+                                user: {
+                                    select: {
+                                        user_id: true,
+                                        full_name: true,
+                                        avatar: true,
+                                        link_url: true,
+                                    },
+                                },
+                                content: true,
+                                comment_like: true,
+                                image_id: true,
+                                created_at: true,
+                            },
+                        },
+                    },
+                },
+                image_list: {
+                    select: {
+                        image_list_id: true,
+                        list_name: true,
+                        privacy_id: true,
+                        image: {
+                            select: {
+                                image_id: true,
+                                image_name: true,
+                                path: true,
+                                description: true,
+                                is_delete: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        if (!user)
+            return successCode(200, 'Người dùng không tồn tại', 'No data');
+
+        return successCode(200, 'Tìm kiếm người dùng thành công', user);
+    }
+
+    // Lấy ra danh sách bạn bè của đối phương
+    async findFriendOtherUser(linkUrl: string) {
+        const user = await this.prisma.user.findFirst({
+            where: {
+                link_url: linkUrl,
+                is_active: true,
+            },
+
+            select: {
+                user_id: true,
+                email: true,
+                full_name: true,
+                avatar: true,
+                link_url: true,
+                ////////
+            },
+        });
+        if (!user)
+            return successCode(200, 'Người dùng không tồn tại', 'No data');
+
+        return successCode(200, 'Tìm kiếm người dùng thành công', user);
+    }
 }

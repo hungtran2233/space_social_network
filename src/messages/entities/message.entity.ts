@@ -1,4 +1,3 @@
-export class Message {
-    name: string;
-    text: string;
-}
+export class Message {}
+
+export class Conversation {}

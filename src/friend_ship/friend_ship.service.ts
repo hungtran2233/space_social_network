@@ -69,17 +69,29 @@ export class FriendShipService {
 
         if (!existingSend) {
             // 5/ Tạo lời mời kết bạn với trạng thái 'pending'
-            await this.prisma.friend_ship.create({
+            const newInvitation = await this.prisma.friend_ship.create({
                 data: {
                     user_id_1: myInfo.user_id,
                     user_id_2: createFriendShipDto.receive_user_id,
                     status: 'pending',
                 },
             });
+
+            // 6/ Lấy lại record mới tạo lời mời đó
+            const getNewInvitation = await this.prisma.friend_ship.findFirst({
+                where: {
+                    friendship_id: newInvitation.friendship_id,
+                },
+                select: {
+                    user_id_1: true,
+                    user_id_2: true,
+                    status: true,
+                },
+            });
             return successCode(
                 201,
                 'Lời mời kết bạn được gửi đi thành công',
-                'Pending',
+                getNewInvitation,
             );
         } else {
             conflict(
@@ -88,27 +100,44 @@ export class FriendShipService {
         }
     }
 
-    // Show ra tất cả lời mời kết bạn của người khác
+    // Show ra tất cả lời mời kết bạn
     async findAllInvitation(req: any) {
         // console.log(req.user.data);
-        const myId = req.user.data.user_id;
+        const myInfo = req.user.data;
         // console.log(myId);
-        const allInvitation = await this.prisma.friend_ship.findMany({
-            where: {
-                user_id_2: myId,
-                status: 'pending',
-            },
-        });
+        // const allInvitation = await this.prisma.friend_ship.findMany({
+        //     where: {
+        //         user_id_2: myId,
+        //         status: 'pending',
+        //     },
+        //     select: {
+        //         user_friend_ship_user_id_1Touser: {
+        //             select: {
+        //                 user_id: true,
+        //                 full_name: true,
+        //                 avatar: true,
+        //                 link_url: true,
+        //             },
+        //         },
+        //     },
+        // });
 
-        if (allInvitation.length !== 0) {
-            return successCode(
-                200,
-                'Tìm thấy tất cả lời mời kết bạn thành công',
-                allInvitation,
-            );
-        } else {
-            notFound('Không tìm thấy lời mời kết bạn nào');
-        }
+        const allInvitation = await this.prisma.$queryRaw`
+        SELECT u.user_id, u.full_name, u.avatar, u.avatar, u.link_url, 
+        ui.cover_image, ui.country, ui.study_at, ui.working_at, ui.favorites, ui.created_at
+        FROM friend_ship f
+        JOIN user u ON  f.user_id_1 = u.user_id
+        JOIN user_info ui ON u.user_id = ui.user_id
+         WHERE  f.user_id_2 = ${myInfo.user_id}
+            AND f.status = 'pending'
+           
+        `;
+
+        return successCode(
+            200,
+            'Tìm thấy tất cả lời mời kết bạn thành công',
+            allInvitation,
+        );
     }
 
     // Chấp nhận lời mời kết bạn từ user_id_1
@@ -143,22 +172,87 @@ export class FriendShipService {
         }
     }
 
-    // Show tất cả bạn bè của user
-    async findAllFriends(req: any) {
+    // Kiểm tra trạng thái bạn bè của mình với người khác
+    async checkFriendShipStatus(req: any, linkUrl: string) {
         const myInfo = req.user.data;
-        const myFriends = await this.prisma.friend_ship.findMany({
+        // 1/ Tìm ra id của user đó dựa vào linkUrl
+        const otherUser = await this.prisma.user.findFirst({
             where: {
-                OR: [
-                    {
-                        user_id_1: myInfo.user_id,
-                    },
-                    {
-                        user_id_2: myInfo.user_id,
-                    },
-                ],
-                status: 'accepted',
+                link_url: linkUrl,
             },
         });
+
+        if (!otherUser)
+            return notFound(
+                'Không tìm thấy user này, hãy kiểm tra lại đường link',
+            );
+        // 2/ Dựa vào user_id để tìm ra mối quan hệ của 2 người
+        const existingCreatedFriendShip =
+            await this.prisma.friend_ship.findFirst({
+                where: {
+                    OR: [
+                        {
+                            user_id_1: myInfo.user_id,
+                            user_id_2: otherUser.user_id,
+                        },
+                        {
+                            user_id_1: otherUser.user_id,
+                            user_id_2: myInfo.user_id,
+                        },
+                    ],
+                },
+                select: {
+                    user_id_1: true,
+                    user_id_2: true,
+                    status: true,
+                },
+            });
+
+        if (existingCreatedFriendShip) {
+            return successCode(
+                200,
+                'Tìm thấy trạng thái bạn bè thành công',
+                existingCreatedFriendShip,
+            );
+        }
+        return successCode(
+            200,
+            'Bạn chưa thiết lập trạng thái với người này',
+            false,
+        );
+    }
+
+    // Lấy tất cả bạn bè của user
+    async findAllFriends(req: any) {
+        const myInfo = req.user.data;
+        // const arrMyFriends = await this.prisma.friend_ship.findMany({
+        //     where: {
+        //         OR: [
+        //             {
+        //                 user_id_1: myInfo.user_id,
+        //             },
+        //             {
+        //                 user_id_2: myInfo.user_id,
+        //             },
+        //         ],
+        //         status: 'accepted',
+        //     },
+        //     select: {
+        //         user_friend_ship_user_id_2Touser: true,
+        //     },
+        // });
+
+        const myFriends = await this.prisma.$queryRaw`
+        SELECT u.user_id, u.full_name, u.avatar, u.avatar, u.link_url, 
+        ui.cover_image, ui.country, ui.study_at, ui.working_at, ui.favorites, ui.created_at
+        FROM friend_ship f
+        JOIN user u ON f.user_id_1 = u.user_id OR f.user_id_2 = u.user_id
+        JOIN user_info ui ON u.user_id = ui.user_id
+         WHERE (f.user_id_1 = ${myInfo.user_id} OR f.user_id_2 = ${myInfo.user_id})
+            AND f.status = 'accepted'
+            AND u.user_id != ${myInfo.user_id};
+        `;
+
         return successCode(200, 'Lấy danh sách bạn bè thành công', myFriends);
     }
 
