@@ -9,7 +9,13 @@ export class NewsService {
     prisma = new PrismaClient();
 
     // Tạo tin
-    async create(req: any, fileUpload: Express.Multer.File, musicUrl: string) {
+    async create(
+        req: any,
+        fileUpload: Express.Multer.File,
+        newsContent: string,
+        musicUrl: string,
+        privacyId: number,
+    ) {
         const myInfo = req.user.data;
         if (!fileUpload) badRequest('Bạn chưa chọn hình ảnh');
 
@@ -34,8 +40,10 @@ export class NewsService {
         const news = await this.prisma.news.create({
             data: {
                 image_id: newImage.image_id,
-                user_id: myInfo.user_id,
+                news_content: newsContent,
                 music_url: musicUrl,
+                privacy_id: privacyId,
+                user_id: myInfo.user_id,
             },
         });
 

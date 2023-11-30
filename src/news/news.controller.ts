@@ -47,10 +47,18 @@ export class NewsController {
     create(
         @Req() req: any,
         @UploadedFile() file: Express.Multer.File,
+        @Body('news_content') newsContent: string,
         @Body('music_url') musicUrl: string,
+        @Body('privacy_id') privacyId: string,
     ) {
         try {
-            return this.newsService.create(req, file, musicUrl);
+            return this.newsService.create(
+                req,
+                file,
+                newsContent,
+                musicUrl,
+                +privacyId,
+            );
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
