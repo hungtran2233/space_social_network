@@ -67,12 +67,13 @@ export class NewsController {
         }
     }
 
+    // Lấy danh sách tin
     @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Get('/get-all-news')
-    findAll() {
+    findAllNews(@Req() req: any) {
         try {
-            return this.newsService.findAll();
+            return this.newsService.findAllNews(req);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
