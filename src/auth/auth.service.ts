@@ -315,7 +315,7 @@ export class AuthService {
 
         await this.prisma.user.update({
             data: {
-                avatar: `/public/img/${fileUpload.filename}`,
+                avatar: `/public/image/user_avatar/${fileUpload.filename}`,
             },
             where: {
                 user_id: myInfo.user_id,
@@ -334,7 +334,7 @@ export class AuthService {
         await this.prisma.image.create({
             data: {
                 image_name: fileUpload.originalname,
-                path: `/public/img/${fileUpload.filename}`,
+                path: `/public/image/user_avatar/${fileUpload.filename}`,
                 image_list_id: findImageList.image_list_id,
             },
         });
@@ -353,7 +353,7 @@ export class AuthService {
 
         await this.prisma.user_info.update({
             data: {
-                cover_image: `/public/img/${fileUpload.filename}`,
+                cover_image: `/public/image/user_cover_img/${fileUpload.filename}`,
             },
             where: {
                 user_id: myInfo.user_id,
@@ -372,7 +372,7 @@ export class AuthService {
         await this.prisma.image.create({
             data: {
                 image_name: fileUpload.originalname,
-                path: fileUpload.filename,
+                path: `/public/image/user_cover_img/${fileUpload.filename}`,
                 image_list_id: findImageList.image_list_id,
             },
         });

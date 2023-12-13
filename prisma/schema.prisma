@@ -235,8 +235,12 @@ model user {
   avatar                                            String?                   @db.VarChar(255)
   link_url                                          String?                   @db.VarChar(255)
   is_active                                         Boolean?                  @default(true)
+  block_list_block_list_blocker_idTouser            block_list[]              @relation("block_list_blocker_idTouser")
+  block_list_block_list_blocked_idTouser            block_list[]              @relation("block_list_blocked_idTouser")
   comment                                           comment[]
   comment_like                                      comment_like[]
+  follow_follow_follower_idTouser                   follow[]                  @relation("follow_follower_idTouser")
+  follow_follow_following_idTouser                  follow[]                  @relation("follow_following_idTouser")
   friend_ship_friend_ship_user_id_1Touser           friend_ship[]             @relation("friend_ship_user_id_1Touser")
   friend_ship_friend_ship_user_id_2Touser           friend_ship[]             @relation("friend_ship_user_id_2Touser")
   image_like                                        image_like[]
@@ -252,19 +256,7 @@ model user {
   ro_role                                           ro_role[]
   save_image                                        save_image[]
   session                                           session[]
-  user_follow_user_follow_follower_idTouser         user_follow[]             @relation("user_follow_follower_idTouser")
-  user_follow_user_follow_following_idTouser        user_follow[]             @relation("user_follow_following_idTouser")
   user_info                                         user_info?
-}
-
-model user_follow {
-  follower_id                         Int
-  following_id                        Int
-  user_user_follow_follower_idTouser  user @relation("user_follow_follower_idTouser", fields: [follower_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "user_follow_ibfk_1")
-  user_user_follow_following_idTouser user @relation("user_follow_following_idTouser", fields: [following_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "user_follow_ibfk_2")
-
-  @@id([follower_id, following_id])
-  @@index([following_id], map: "following_id")
 }
 
 model user_info {
@@ -322,6 +314,29 @@ model msg_message_read_status {
 
   @@index([message_id], map: "message_id")
   @@index([user_id], map: "user_id")
+}
+
+model follow {
+  follow_id                      Int   @id @default(autoincrement())
+  follower_id                    Int?
+  following_id                   Int?
+  user_follow_follower_idTouser  user? @relation("follow_follower_idTouser", fields: [follower_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "follow_ibfk_1")
+  user_follow_following_idTouser user? @relation("follow_following_idTouser", fields: [following_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "follow_ibfk_2")
+
+  @@unique([follower_id, following_id], map: "follower_id")
+  @@index([following_id], map: "following_id")
+}
+
+model block_list {
+  block_id                         Int       @id @default(autoincrement())
+  blocker_id                       Int?
+  blocked_id                       Int?
+  created_at                       DateTime? @default(now()) @db.Timestamp(0)
+  user_block_list_blocker_idTouser user?     @relation("block_list_blocker_idTouser", fields: [blocker_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "block_list_ibfk_1")
+  user_block_list_blocked_idTouser user?     @relation("block_list_blocked_idTouser", fields: [blocked_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "block_list_ibfk_2")
+
+  @@index([blocked_id], map: "blocked_id")
+  @@index([blocker_id], map: "blocker_id")
 }
 
 enum ro_role_role_name {

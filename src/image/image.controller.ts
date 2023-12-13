@@ -34,9 +34,9 @@ export class ImageController {
     @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @UseInterceptors(
-        FileInterceptor('file', {
+        FilesInterceptor('files', 20, {
             storage: diskStorage({
-                destination: process.cwd() + '/public/img',
+                destination: process.cwd() + '/public/image/community',
                 filename: (req, file, callback) => {
                     callback(
                         null,
@@ -49,11 +49,11 @@ export class ImageController {
     @Post('/create-image')
     uploadImage(
         @Req() req: any,
-        @UploadedFile() fileUpload: Express.Multer.File,
+        @UploadedFiles() filesUpload: Express.Multer.File,
         @Body('description') descImg: string,
     ) {
         try {
-            return this.imageService.uploadImage(req, fileUpload, descImg);
+            return this.imageService.uploadImage(req, filesUpload, descImg);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',
@@ -68,7 +68,7 @@ export class ImageController {
     @UseInterceptors(
         FilesInterceptor('files', 20, {
             storage: diskStorage({
-                destination: process.cwd() + '/public/img',
+                destination: process.cwd() + '/public/image/community',
                 filename: (req, file, callback) => {
                     callback(
                         null,

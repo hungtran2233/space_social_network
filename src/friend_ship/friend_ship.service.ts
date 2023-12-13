@@ -104,23 +104,6 @@ export class FriendShipService {
     async findAllInvitation(req: any) {
         // console.log(req.user.data);
         const myInfo = req.user.data;
-        // console.log(myId);
-        // const allInvitation = await this.prisma.friend_ship.findMany({
-        //     where: {
-        //         user_id_2: myId,
-        //         status: 'pending',
-        //     },
-        //     select: {
-        //         user_friend_ship_user_id_1Touser: {
-        //             select: {
-        //                 user_id: true,
-        //                 full_name: true,
-        //                 avatar: true,
-        //                 link_url: true,
-        //             },
-        //         },
-        //     },
-        // });
 
         const allInvitation = await this.prisma.$queryRaw`
         SELECT u.user_id, u.full_name, u.avatar, u.avatar, u.link_url, 
@@ -141,34 +124,83 @@ export class FriendShipService {
     }
 
     // Chấp nhận lời mời kết bạn từ user_id_1
-    async update(req: any, id: number) {
+    async update(req: any, otherUserId: number) {
         const myId = req.user.data.user_id;
 
-        // Tìm user_id_1 đã gửi lời mời mà mình là user_id_2 muốn chấp nhận kết bạn
+        // 1/ Tìm user_id_1 đã gửi lời mời mà mình là user_id_2 muốn chấp nhận kết bạn
         const friendShip = await this.prisma.friend_ship.findFirst({
             where: {
-                user_id_1: id,
+                user_id_1: otherUserId,
                 user_id_2: myId,
                 status: 'pending',
             },
         });
 
-        if (friendShip) {
-            await this.prisma.friend_ship.update({
+        if (!friendShip)
+            notFound(
+                `UserId=${otherUserId} không có gửi cho bạn lời mời kết bạn`,
+            );
+
+        // 2/ Update trạng thái bạn bè
+        await this.prisma.friend_ship.update({
+            where: {
+                friendship_id: friendShip.friendship_id,
+            },
+            data: {
+                status: 'accepted',
+            },
+        });
+
+        // 3/ Kiểm tra xem cả 2 đã theo dõi nhau chưa
+        const checkFollow = await this.prisma.follow.findMany({
+            where: {
+                OR: [
+                    { follower_id: myId, following_id: otherUserId },
+                    { follower_id: otherUserId, following_id: myId },
+                ],
+            },
+        });
+
+        if (checkFollow.length === 0) {
+            // Cả 2 chưa ai theo dõi người kia ==> tạo 2 record
+            await this.prisma.follow.createMany({
+                data: [
+                    { follower_id: otherUserId, following_id: myId },
+                    { follower_id: myId, following_id: otherUserId },
+                ],
+            });
+
+            return successCode(
+                200,
+                `Bạn đã chấp nhận lời mời kết bạn của UserId = ${otherUserId} `,
+                'Accepted',
+            );
+        } else if (checkFollow.length === 1) {
+            // Có 1 trong 2 người theo dõi người kia
+            // B1: Xóa record đó
+            await this.prisma.follow.delete({
                 where: {
-                    friendship_id: friendShip.friendship_id,
+                    follow_id: checkFollow[0].follow_id,
                 },
-                data: {
-                    status: 'accepted',
-                },
+            });
+            // B2: Thêm 2 record vào
+            await this.prisma.follow.createMany({
+                data: [
+                    { follower_id: otherUserId, following_id: myId },
+                    { follower_id: myId, following_id: otherUserId },
+                ],
             });
             return successCode(
                 200,
-                `Bạn đã chấp nhận lời mời kết bạn của UserId = ${id} `,
+                `Bạn đã chấp nhận lời mời kết bạn của UserId = ${otherUserId} `,
                 'Accepted',
             );
         } else {
-            notFound(`UserId=${id} không có gửi cho bạn lời mời kết bạn`);
+            return successCode(
+                200,
+                `Bạn đã chấp nhận lời mời kết bạn của UserId = ${otherUserId} `,
+                'Accepted',
+            );
         }
     }
 
@@ -256,6 +288,49 @@ export class FriendShipService {
         return successCode(200, 'Lấy danh sách bạn bè thành công', myFriends);
     }
 
+    // Show ra tất cả gợi ý kết bạn
+    async findAllSuggestion(req: any) {
+        const myInfo = req.user.data;
+
+        // Loại tất cả: <chính mình, bạn bè, lời mời kết bạn từ người khác, những người bị block>
+        // ra khỏi danh sách user, chỉ lấy những user còn lại
+        const allSuggest = await this.prisma.$queryRaw`
+            SELECT u.user_id, u.full_name, u.avatar, u.link_url, ui.country 
+            FROM user u
+            JOIN user_info ui ON u.user_id = ui.user_id
+            WHERE u.user_id <> ${myInfo.user_id} AND u.user_id NOT IN (
+                SELECT user_id_1
+                FROM friend_ship
+                WHERE user_id_2 = ${myInfo.user_id} AND status = 'accepted'
+                UNION
+                SELECT user_id_2
+                FROM friend_ship
+                WHERE user_id_1 = ${myInfo.user_id} AND status = 'accepted'
+                UNION
+                SELECT user_id_1
+                FROM friend_ship
+                WHERE user_id_2 = ${myInfo.user_id} AND status = 'pending'
+                UNION
+                SELECT user_id_2
+                FROM friend_ship
+                WHERE user_id_1 = ${myInfo.user_id} AND status = 'pending'
+                UNION
+                SELECT user_id_1
+                FROM friend_ship
+                WHERE user_id_2 = ${myInfo.user_id} AND status = 'blocked'
+                UNION
+                SELECT user_id_2
+                FROM friend_ship
+                WHERE user_id_1 = ${myInfo.user_id} AND status = 'blocked'
+            )
+         `;
+        return successCode(
+            200,
+            'Lấy danh sách gợi ý kết bạn thành công',
+            allSuggest,
+        );
+    }
+
     // Xóa bạn bè với user_id=id
     async remove(id: number, req: any) {
         const myId = req.user.data.user_id;
@@ -278,9 +353,19 @@ export class FriendShipService {
         });
 
         if (friendShip) {
+            // 1/ Xóa record friend_ship
             await this.prisma.friend_ship.delete({
                 where: {
                     friendship_id: friendShip.friendship_id,
+                },
+            });
+            // 2/ Xóa follow của cả 2
+            await this.prisma.follow.deleteMany({
+                where: {
+                    OR: [
+                        { follower_id: myId, following_id: id },
+                        { follower_id: id, following_id: myId },
+                    ],
                 },
             });
             return successCode(

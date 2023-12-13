@@ -94,9 +94,24 @@ export class FriendShipController {
     @RoleDecorator(Role.ADMIN, Role.USER)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Put('/update-friend-ship/:id')
-    update(@Req() req: any, @Param('id') id: string) {
+    update(@Req() req: any, @Param('id') otherUserId: string) {
         try {
-            return this.friendShipService.update(req, +id);
+            return this.friendShipService.update(req, +otherUserId);
+        } catch (error) {
+            throw new HttpException(
+                'Lỗi server',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    // Show ra tất cả gợi ý kết bạn
+    @RoleDecorator(Role.ADMIN, Role.USER)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('/show-all-suggestion')
+    findAllSuggestion(@Req() req: any) {
+        try {
+            return this.friendShipService.findAllSuggestion(req);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',

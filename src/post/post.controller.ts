@@ -35,7 +35,7 @@ export class PostController {
     @UseInterceptors(
         FilesInterceptor('files', 20, {
             storage: diskStorage({
-                destination: process.cwd() + '/public/img',
+                destination: process.cwd() + '/public/image/posts',
                 filename: (req, file, callback) => {
                     callback(
                         null,
@@ -73,9 +73,9 @@ export class PostController {
     @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Get('/get-all-post')
-    findAll() {
+    findAll(@Req() req: any) {
         try {
-            return this.postService.findAll();
+            return this.postService.findAll(req);
         } catch (error) {
             throw new HttpException(
                 'Lỗi server',

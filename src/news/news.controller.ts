@@ -33,7 +33,7 @@ export class NewsController {
     @UseInterceptors(
         FileInterceptor('file', {
             storage: diskStorage({
-                destination: process.cwd() + '/public/img',
+                destination: process.cwd() + '/public/image/news',
                 filename: (req, file, callback) => {
                     callback(
                         null,
@@ -82,6 +82,9 @@ export class NewsController {
         }
     }
 
+    // Xóa news
+    @RoleDecorator(Role.ADMIN, Role.USER, Role.CELEBRITY)
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Delete(':id')
     remove(@Param('id') id: string) {
         return this.newsService.remove(+id);

@@ -101,7 +101,7 @@ export class AuthController {
     @UseInterceptors(
         FileInterceptor('file', {
             storage: diskStorage({
-                destination: process.cwd() + '/public/img',
+                destination: process.cwd() + '/public/image/user_avatar',
                 filename: (req, file, callback) =>
                     callback(
                         null,
@@ -131,7 +131,7 @@ export class AuthController {
     @UseInterceptors(
         FileInterceptor('file', {
             storage: diskStorage({
-                destination: process.cwd() + '/public/img',
+                destination: process.cwd() + '/public/image/user_cover_img',
                 filename: (req, file, callback) =>
                     callback(
                         null,

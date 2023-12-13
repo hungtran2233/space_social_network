@@ -31,7 +31,7 @@ export class NewsService {
         const newImage = await this.prisma.image.create({
             data: {
                 image_name: fileUpload.originalname,
-                path: fileUpload.filename,
+                path: `/public/image/news/${fileUpload.filename}`,
                 image_list_id: imageList.image_list_id,
             },
         });
@@ -50,14 +50,14 @@ export class NewsService {
         return successCode(200, 'Tạo tin thành công', news);
     }
 
-    // Show danh sách tin
+    // Lấy danh sách tin
     async findAllNews(req: any) {
-        const myInfo = req.user.data;
+        const myId = req.user.data.user_id;
 
         //1/ Kiểm tra xem mình có đăng tin không
         const myNews = await this.prisma.news.findMany({
             where: {
-                user_id: myInfo.user_id,
+                user_id: myId,
                 expires_at: {
                     gt: new Date(),
                 },
@@ -80,26 +80,29 @@ export class NewsService {
             },
         });
 
-        //2/ Lấy danh sách tất cả bạn bè của bạn
-        const myFriends: { user_id: number }[] = await this.prisma.$queryRaw`
-        SELECT u.user_id
-        FROM friend_ship f
-        JOIN user u ON f.user_id_1 = u.user_id OR f.user_id_2 = u.user_id
-         WHERE (f.user_id_1 = ${myInfo.user_id} OR f.user_id_2 = ${myInfo.user_id})
-            AND f.status = 'accepted'
-            AND u.user_id != ${myInfo.user_id};
-        `;
-        const arrMyFriend = myFriends.map((obj) => obj.user_id);
+        // 2/ Lấy danh sách user mình đang follow
+        const allMyFollowingUser = await this.prisma.follow.findMany({
+            where: {
+                follower_id: myId,
+            },
+            select: {
+                following_id: true,
+            },
+        });
 
-        // 3/ Check mỗi user trong mảng đó xem có user nào đăng tin hay không,
-        // với điều kiện là tin còn hạn (24h kể từ lúc tạo), giá trị privacy_id = 2 (friend)
-        const arrNewsOfMyFriend = await this.prisma.news.findMany({
+        const followingIds = allMyFollowingUser.map(
+            (user) => user.following_id,
+        );
+
+        // 3/ Tìm trong danh sách trên xem có ai đăng tin không
+        const allFriendsNewsAvailable = await this.prisma.news.findMany({
             where: {
                 user_id: {
-                    in: arrMyFriend,
+                    in: followingIds,
                 },
                 expires_at: {
-                    gt: new Date(),
+                    // gt: new Date(),
+                    // Lớn hơn thời điểm hiện tại / Bé hơn là: lt
                 },
                 privacy_id: 2,
             },
@@ -127,14 +130,15 @@ export class NewsService {
         // Gộp mảng, để news của mình lên đầu tiên
         let allNews = null;
         if (myNews && myNews.length > 0) {
-            allNews = [...myNews, ...arrNewsOfMyFriend];
+            allNews = [...myNews, ...allFriendsNewsAvailable];
         } else {
-            allNews = [...arrNewsOfMyFriend];
+            allNews = [...allFriendsNewsAvailable];
         }
 
         return successCode(200, 'Lấy tất cả news thành công', allNews);
     }
 
+    // Xóa news
     remove(id: number) {
         return `This action removes a #${id} news`;
     }

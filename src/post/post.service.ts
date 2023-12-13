@@ -42,7 +42,7 @@ export class PostService {
             // 1/Map files để lưu nhiều image vào table image
             const images = newFiles.map((files) => ({
                 image_name: files.originalname,
-                path: `/public/img/${files.filename}`,
+                path: `/public/image/posts/${files.filename}`,
                 image_list_id: imgList.image_list_id,
                 is_delete: false,
             }));
@@ -75,39 +75,77 @@ export class PostService {
         return successCode(201, 'Tạo bài post thành công', newPost);
     }
 
-    // Hiển thị tất cả bài post công khai Lấy tất cả bài post của tất cả user có privacy_id=1  (public)
-    async findAll() {
-        const allPost = await this.prisma.$queryRaw`
-            SELECT 
-                p.post_id,
-                p.user_id,
-                p.content,
-                p.video_url,
-                CASE WHEN COUNT(i.image_id) = 0 THEN JSON_ARRAY() ELSE 
-                JSON_ARRAYAGG(JSON_OBJECT('image_id', i.image_id, "image_name", i.image_name,  
-                'path', i.path,  'description', i.description)) 
-                END AS arr_img
-            FROM
-                post p
-            LEFT JOIN
-                post_image pi ON p.post_id = pi.post_id
-            LEFT JOIN
-                image i ON pi.image_id = i.image_id
-            WHERE
-                p.privacy_id = 1 and p.is_deleted = 0
-            GROUP BY
-                p.post_id;
-        `;
+    // Lấy tất cả bài post của tất cả những người mình đang theo dõi, với điều kiện bài post đó công khai
+    // privacy_id=1  (public)
+    async findAll(req: any) {
+        const myId = req.user.data.user_id;
 
-        if (allPost) {
-            return successCode(
-                200,
-                'Lấy danh sách bài viết thành công',
-                allPost,
-            );
-        } else {
-            notFound('Không có bài viết nào tồn tại');
-        }
+        // 1/ Lấy danh sách user mình đang follow
+        const allMyFollowingUser = await this.prisma.follow.findMany({
+            where: {
+                follower_id: myId,
+            },
+            select: {
+                following_id: true,
+            },
+        });
+
+        const followingIds = allMyFollowingUser.map(
+            (user) => user.following_id,
+        );
+
+        // 2/ Tìm trong danh sách trên xem có ai đăng posts hay không
+        const allFriendsPostsAvailable = await this.prisma.post.findMany({
+            where: {
+                user_id: {
+                    in: followingIds,
+                },
+                privacy_id: {
+                    in: [1, 2], // 1-public  và 2-friend
+                },
+                is_deleted: false,
+            },
+            include: {
+                user: true,
+                privacy: true,
+                post_like: {
+                    select: {
+                        user_id: true,
+                    },
+                },
+                comment: {
+                    include: {
+                        user: {
+                            select: {
+                                full_name: true,
+                                avatar: true,
+                            },
+                        },
+                    },
+                },
+                post_image: {
+                    include: {
+                        image: {
+                            select: {
+                                image_id: true,
+                                image_name: true,
+                                path: true,
+                                description: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                created_at: 'desc',
+            },
+        });
+
+        return successCode(
+            200,
+            'Lấy tất cả bài viết thành công',
+            allFriendsPostsAvailable,
+        );
     }
 
     // Trang cá nhân: lấy tất cả bài viết cá nhân

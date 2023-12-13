@@ -13,6 +13,8 @@ import { CommentModule } from './comment/comment.module';
 import { LikeModule } from './like/like.module';
 import { NewsModule } from './news/news.module';
 import { ConversationModule } from './conversation/conversation.module';
+import { FollowModule } from './follow/follow.module';
+import { BlockListModule } from './block_list/block_list.module';
 
 @Module({
     imports: [
@@ -28,6 +30,8 @@ import { ConversationModule } from './conversation/conversation.module';
         LikeModule,
         NewsModule,
         ConversationModule,
+        FollowModule,
+        BlockListModule,
     ],
     controllers: [AppController],
     providers: [AppService],

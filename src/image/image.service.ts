@@ -12,7 +12,7 @@ export class ImageService {
     // Upload ảnh mặc định vào image_list có list_name=uploaded-images
     async uploadImage(
         req: any,
-        fileUpload: Express.Multer.File,
+        filesUpload: Express.Multer.File,
         descImg: string,
     ) {
         // // 1/ Lấy được image_list_id thông qua user_id và list_name=uploaded-images
@@ -26,14 +26,14 @@ export class ImageService {
         // 2/ Thêm ảnh này vào table image
         const newImage = await this.prisma.image.create({
             data: {
-                image_name: fileUpload.originalname,
-                path: fileUpload.filename,
+                image_name: filesUpload.originalname,
+                path: `/public/image/community/${filesUpload.filename}`,
                 image_list_id: imageList.image_list_id,
                 description: descImg,
             },
         });
 
-        return successCode(200, 'Upload ảnh thành công', fileUpload);
+        return successCode(200, 'Upload ảnh thành công', filesUpload);
     }
 
     // Upload ảnh vào album cá nhân
@@ -49,7 +49,7 @@ export class ImageService {
         if (newFiles && newFiles.length > 0) {
             const images = newFiles.map((files) => ({
                 image_name: files.originalname,
-                path: files.filename,
+                path: `/public/image/community/${filesUpload.filename}`,
                 description: descImg,
                 image_list_id: +imgListId,
                 is_delete: false,
