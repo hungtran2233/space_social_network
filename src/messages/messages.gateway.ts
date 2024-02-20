@@ -32,7 +32,7 @@ export class MessagesGateway implements OnModuleInit {
     // Kiểm tra kết nối
     onModuleInit() {
         this.server.on('connection', (socket) => {
-            console.log(socket.id + ' -- connected ');
+            // console.log(socket.id + ' -- connected ');
         });
     }
 
@@ -46,12 +46,6 @@ export class MessagesGateway implements OnModuleInit {
         const messages = await this.messagesService.findAllMessages(+roomId);
         // Gửi tin nhắn về cho client đã tham gia room
         client.emit('loadMessages', messages);
-    }
-
-    @SubscribeMessage('leaveRoom')
-    handleLeaveRoom(client: Socket, roomId: string) {
-        client.leave(roomId);
-        client.emit('leftRoom', roomId);
     }
 
     // Tạo tin nhắn
@@ -73,37 +67,12 @@ export class MessagesGateway implements OnModuleInit {
                 content: createMessageDto.content,
             },
         });
+    }
 
-        ///////////// Thông báo tin nhắn đến
-        // Lấy tất cả user có trong conversation này
-        // const allMembers = await this.prisma.msg_user_conversation.findMany({
-        //     where: {
-        //         conversation_id: +createMessageDto.conversation_id,
-        //     },
-        //     select: {
-        //         user_id: true,
-        //     },
-        // });
-        // // Loại bỏ bản ghi có user_id của chính người gửi tin nhắn (người gửi chắc chắn "đã đọc")
-        // const filteredMembers = allMembers.filter(
-        //     (member) => member.user_id !== createMessageDto.sender_id,
-        // );
-        // // Tạo trạng thái "chưa đọc" cho tin nhắn
-        // const newMessageReadStatus = await Promise.all(
-        //     filteredMembers.map(async (user) => {
-        //         return this.prisma.msg_message_read_status.create({
-        //             data: {
-        //                 message_id: newClientMessage.message_id,
-        //                 user_id: user.user_id,
-        //                 is_read: false,
-        //             },
-        //         });
-        //     }),
-        // );
-
-        // client.broadcast.emit('isRead', newMessageReadStatus);
-
-        // return this.messagesService.create(createMessageDto, client);
+    @SubscribeMessage('leaveRoom')
+    handleLeaveRoom(client: Socket, roomId: string) {
+        client.leave(roomId);
+        client.emit('leftRoom', roomId);
     }
 
     // hành động khi user đang gõ

@@ -15,6 +15,7 @@ import { NewsModule } from './news/news.module';
 import { ConversationModule } from './conversation/conversation.module';
 import { FollowModule } from './follow/follow.module';
 import { BlockListModule } from './block_list/block_list.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
     imports: [
@@ -32,6 +33,7 @@ import { BlockListModule } from './block_list/block_list.module';
         ConversationModule,
         FollowModule,
         BlockListModule,
+        NotificationModule,
     ],
     controllers: [AppController],
     providers: [AppService],

@@ -8,17 +8,18 @@ datasource db {
 }
 
 model comment {
-  comment_id   Int            @id @default(autoincrement())
-  user_id      Int?
-  image_id     Int?
-  post_id      Int?
-  content      String?        @db.VarChar(500)
-  created_at   DateTime?      @default(now()) @db.Timestamp(0)
-  updated_at   DateTime?      @db.Timestamp(0)
-  user         user?          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_1")
-  image        image?         @relation(fields: [image_id], references: [image_id], onDelete: Cascade, onUpdate: NoAction, map: "comment_ibfk_2")
-  post         post?          @relation(fields: [post_id], references: [post_id], onDelete: Cascade, onUpdate: NoAction, map: "comment_ibfk_3")
-  comment_like comment_like[]
+  comment_id                Int                         @id @default(autoincrement())
+  user_id                   Int?
+  image_id                  Int?
+  post_id                   Int?
+  content                   String?                     @db.VarChar(500)
+  created_at                DateTime?                   @default(now()) @db.Timestamp(0)
+  updated_at                DateTime?                   @db.Timestamp(0)
+  user                      user?                       @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_1")
+  image                     image?                      @relation(fields: [image_id], references: [image_id], onDelete: Cascade, onUpdate: NoAction, map: "comment_ibfk_2")
+  post                      post?                       @relation(fields: [post_id], references: [post_id], onDelete: Cascade, onUpdate: NoAction, map: "comment_ibfk_3")
+  comment_like              comment_like[]
+  notification_post_comment notification_post_comment[]
 
   @@index([image_id], map: "image_id")
   @@index([post_id], map: "post_id")
@@ -125,19 +126,20 @@ model msg_message {
 }
 
 model post {
-  post_id    Int          @id @default(autoincrement())
-  user_id    Int?
-  content    String?      @db.VarChar(5000)
-  video_url  String?      @db.VarChar(1000)
-  privacy_id Int?
-  created_at DateTime?    @default(now()) @db.Timestamp(0)
-  updated_at DateTime?    @db.Timestamp(0)
-  is_deleted Boolean?     @default(false)
-  comment    comment[]
-  user       user?        @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_1")
-  privacy    privacy?     @relation(fields: [privacy_id], references: [privacy_id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_2")
-  post_image post_image[]
-  post_like  post_like[]
+  post_id                Int                      @id @default(autoincrement())
+  user_id                Int?
+  content                String?                  @db.VarChar(5000)
+  video_url              String?                  @db.VarChar(1000)
+  privacy_id             Int?
+  created_at             DateTime?                @default(now()) @db.Timestamp(0)
+  updated_at             DateTime?                @db.Timestamp(0)
+  is_deleted             Boolean?                 @default(false)
+  comment                comment[]
+  notification_post_user notification_post_user[]
+  user                   user?                    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_1")
+  privacy                privacy?                 @relation(fields: [privacy_id], references: [privacy_id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_2")
+  post_image             post_image[]
+  post_like              post_like[]
 
   @@index([privacy_id], map: "privacy_id")
   @@index([user_id], map: "user_id")
@@ -228,29 +230,32 @@ model session {
 }
 
 model user {
-  user_id                                           Int                       @id @default(autoincrement())
-  email                                             String?                   @db.VarChar(100)
-  pass_word                                         String?                   @db.VarChar(100)
-  full_name                                         String?                   @db.VarChar(100)
-  avatar                                            String?                   @db.VarChar(255)
-  link_url                                          String?                   @db.VarChar(255)
-  is_active                                         Boolean?                  @default(true)
-  block_list_block_list_blocker_idTouser            block_list[]              @relation("block_list_blocker_idTouser")
-  block_list_block_list_blocked_idTouser            block_list[]              @relation("block_list_blocked_idTouser")
+  user_id                                           Int                         @id @default(autoincrement())
+  email                                             String?                     @db.VarChar(100)
+  pass_word                                         String?                     @db.VarChar(100)
+  full_name                                         String?                     @db.VarChar(100)
+  avatar                                            String?                     @db.VarChar(255)
+  link_url                                          String?                     @db.VarChar(255)
+  is_active                                         Boolean?                    @default(true)
+  block_list_block_list_blocker_idTouser            block_list[]                @relation("block_list_blocker_idTouser")
+  block_list_block_list_blocked_idTouser            block_list[]                @relation("block_list_blocked_idTouser")
   comment                                           comment[]
   comment_like                                      comment_like[]
-  follow_follow_follower_idTouser                   follow[]                  @relation("follow_follower_idTouser")
-  follow_follow_following_idTouser                  follow[]                  @relation("follow_following_idTouser")
-  friend_ship_friend_ship_user_id_1Touser           friend_ship[]             @relation("friend_ship_user_id_1Touser")
-  friend_ship_friend_ship_user_id_2Touser           friend_ship[]             @relation("friend_ship_user_id_2Touser")
+  follow_follow_follower_idTouser                   follow[]                    @relation("follow_follower_idTouser")
+  follow_follow_following_idTouser                  follow[]                    @relation("follow_following_idTouser")
+  friend_ship_friend_ship_user_id_1Touser           friend_ship[]               @relation("friend_ship_user_id_1Touser")
+  friend_ship_friend_ship_user_id_2Touser           friend_ship[]               @relation("friend_ship_user_id_2Touser")
   image_like                                        image_like[]
   image_list                                        image_list[]
-  msg_conversation_msg_conversation_user_id_1Touser msg_conversation[]        @relation("msg_conversation_user_id_1Touser")
-  msg_conversation_msg_conversation_user_id_2Touser msg_conversation[]        @relation("msg_conversation_user_id_2Touser")
+  msg_conversation_msg_conversation_user_id_1Touser msg_conversation[]          @relation("msg_conversation_user_id_1Touser")
+  msg_conversation_msg_conversation_user_id_2Touser msg_conversation[]          @relation("msg_conversation_user_id_2Touser")
   msg_message                                       msg_message[]
   msg_message_read_status                           msg_message_read_status[]
   msg_user_conversation                             msg_user_conversation[]
   news                                              news[]
+  notification                                      notification[]
+  notification_post_comment                         notification_post_comment[]
+  notification_post_user                            notification_post_user[]
   post                                              post[]
   post_like                                         post_like[]
   ro_role                                           ro_role[]
@@ -337,6 +342,52 @@ model block_list {
 
   @@index([blocked_id], map: "blocked_id")
   @@index([blocker_id], map: "blocker_id")
+}
+
+model notification {
+  notification_id           Int                        @id @default(autoincrement())
+  event_id                  Int?
+  target_user_id            Int?
+  is_read                   Boolean?
+  created_at                DateTime?                  @default(now()) @db.Timestamp(0)
+  notification_event        notification_event?        @relation(fields: [event_id], references: [notification_event_id], onDelete: NoAction, onUpdate: NoAction, map: "notification_ibfk_1")
+  user                      user?                      @relation(fields: [target_user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "notification_ibfk_2")
+  notification_post_comment notification_post_comment?
+  notification_post_user    notification_post_user?
+
+  @@index([event_id], map: "event_id")
+  @@index([target_user_id], map: "target_user_id")
+}
+
+model notification_event {
+  notification_event_id Int            @id @default(autoincrement())
+  type                  String?        @db.VarChar(100)
+  description           String?        @db.VarChar(200)
+  notification          notification[]
+}
+
+model notification_post_comment {
+  notification_id        Int          @id
+  source_user_id         Int?
+  source_post_comment_id Int?
+  notification           notification @relation(fields: [notification_id], references: [notification_id], onDelete: Cascade, onUpdate: NoAction, map: "notification_post_comment_ibfk_1")
+  user                   user?        @relation(fields: [source_user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "notification_post_comment_ibfk_2")
+  comment                comment?     @relation(fields: [source_post_comment_id], references: [comment_id], onDelete: NoAction, onUpdate: NoAction, map: "notification_post_comment_ibfk_3")
+
+  @@index([source_post_comment_id], map: "source_post_comment_id")
+  @@index([source_user_id], map: "source_user_id")
+}
+
+model notification_post_user {
+  notification_id Int          @id
+  source_user_id  Int?
+  source_post_id  Int?
+  notification    notification @relation(fields: [notification_id], references: [notification_id], onDelete: Cascade, onUpdate: NoAction, map: "notification_post_user_ibfk_1")
+  user            user?        @relation(fields: [source_user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "notification_post_user_ibfk_2")
+  post            post?        @relation(fields: [source_post_id], references: [post_id], onDelete: NoAction, onUpdate: NoAction, map: "notification_post_user_ibfk_3")
+
+  @@index([source_post_id], map: "source_post_id")
+  @@index([source_user_id], map: "source_user_id")
 }
 
 enum ro_role_role_name {
